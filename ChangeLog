@@ -1,5 +1,8 @@
+05/16/02:
+- synthesize: return when an unknown command is encountered, to avoid crashing
+
 05/14/02:
-Release v0.3.0 (no changes since 05/02)
+- Release v0.3.0 (no changes since 05/02)
 
 05/02/02:
 - fs.c: modified synthesize(), play(), and s_synth() so that items sent to threads may have multiple "types" (currently SPEECH and TONE are defined)

@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.6 2002/05/01 03:59:13 mgorse Exp $
+ * $Id: fs.c,v 1.7 2002/05/03 01:17:58 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -418,7 +418,9 @@ static void * synthesize(void *s)
       break;
       }
     default:
+      /* snafu - I'm getting the hell out of here */
       es_log(1, "synthesize: internal error: unknown command: %x", text[text_head - 1]);
+      return NULL;
     }
     if (time_left > 3)
     {
