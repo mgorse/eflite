@@ -1,3 +1,8 @@
+05/25/02:
+es.c: add -d (debug) option to prevent forking
+configure.in, Makefile.in: search for -lc_r instead of -llthread and
+   remove /usr/local/ hack
+
 05/18/02:
 configure.in, Makefile.in: lpthread -> lthread, explicitly search /usr/local/lib (for FreeBSD)
 
