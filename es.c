@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id$
+ * $Id: es.c,v 1.2 2002/03/04 01:36:49 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -579,6 +579,19 @@ es_log("silent");
   }
 }
 
+static int string_is_complete(char *buf, int size)
+{
+  int i;
+
+  if (buf[size-1] != 13 && buf[size-1] != 10) return 0;
+  for (i = size-2;i >= 0;i--)
+  {
+    if (buf[i] == '}') return 1;
+    if (buf[i] == '{') return 0;
+  }
+  return 1;
+}
+
 int handle(CLIENT *client)
 {
   int i, j;
@@ -591,7 +604,7 @@ int handle(CLIENT *client)
   buf[size] = '\0';
   /* If we did not get a complete line, then assume that the buffer filled up
      and that there is more to come. */
-  while (buf[size - 1] != 13 && buf[size - 1] != 10)
+  while (!string_is_complete(buf, size))
   {
     bufsize += 200;
     buf = realloc (buf, bufsize);
