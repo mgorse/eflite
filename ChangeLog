@@ -1,3 +1,6 @@
+12/22/02:
+es.c: Read directly from fd 0 instead of /dev/stdin (/dev/stdin doesn't exist everywhere)
+
 12/07/02:
 - Release v0.3.4
 

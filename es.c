@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.14 2002/10/11 01:42:03 mgorse Exp $
+ * $Id: es.c,v 1.15 2002/10/11 02:10:14 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -694,9 +694,17 @@ void passthrough(char *infile, int outfd)
   int fd;
 
   signal(SIGCHLD, finish);
-  es_log(1, "es: reading input from %s", infile);
-  fd = open(infile, O_RDONLY);
-  if (fd == -1) terror("open");
+  if (infile)
+  {
+    es_log(1, "es: reading input from %s", infile);
+    fd = open(infile, O_RDONLY);
+    if (fd == -1) terror("open");
+  }
+  else
+  {
+    es_log(1, "es: reading input from stdin", infile);
+    fd = 0;
+  }
   while (1)
   {
     size = read(fd, buf, sizeof(buf));
@@ -711,7 +719,7 @@ void passthrough(char *infile, int outfd)
       if (is_fifo)
       {
 	/* Re-open it */
-	fd = open(infile, O_RDONLY);
+	fd = (infile? open(infile, O_RDONLY): 0);
 	continue;
       }
       /* Otherwise terminate */
@@ -736,7 +744,7 @@ int main (int argc, char *argv[])
   fd_set fds;
   int i;
   int maxclients = 0;	/* Number of clients with space allocated */
-  char *infile = "/dev/stdin";
+  char *infile = NULL;
   int max;
   int local_fd;
   int child;
@@ -763,16 +771,13 @@ int main (int argc, char *argv[])
   if ((child = fork()))
   {
     usleep(200000);
-    if (infile)
+    local_fd = sockconnect(sockname);
+    if (local_fd == -1)
     {
-      local_fd = sockconnect(sockname);
-      if (local_fd == -1)
-      {
-	es_log(1 | LOG_STDERR, "Daemon not accepting connections -- exiting\n");
-	exit(1);
-      }
-      passthrough(infile, local_fd);
+      es_log(1 | LOG_STDERR, "Daemon not accepting connections -- exiting\n");
+      exit(1);
     }
+    passthrough(infile, local_fd);
     exit(0);
   }
   punct_some = lookup_string(NULL, "punct_some");
