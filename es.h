@@ -33,5 +33,4 @@ int sockconnect(const char *fname);
 int sockopen(const char *fname);
 
 /* tone.c */
-int speaker_tone(int freq, int dur);
-int dsp_tone(int freq, int dur, int vol);
+int do_tone(int freq, int dur, int vol, int flags);

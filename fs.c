@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.4 2002/04/13 18:55:14 mgorse Exp $
+ * $Id: fs.c,v 1.5 2002/04/15 00:44:06 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -19,8 +19,6 @@
 #include <pthread.h>
 #include <signal.h>	/* tmp. for dbg. */
 #include <assert.h>
-#include <sys/ioctl.h>
-#include <sys/soundcard.h>
 #ifndef STANDALONE
 #include <dlfcn.h>
 #endif

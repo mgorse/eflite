@@ -1,3 +1,7 @@
+04/30/02:
+- tone.c: Add code to use FLite code for audio if EFLITE is defined (so that Solaris can be supported)
+- Add support for tone_volume, speaker_tones, and soundcard_tones configuration settings
+
 04/14/02:
 - Release v0.2.2
 - Adjust rate conversion in es.c to more accurately translate to wpm for FLite

@@ -33,6 +33,9 @@ eflite: fs.o es.o soccon.o sockopen.o tone.o $(FLITE_LIBS)
 fs.o: fs.c
 	$(CC) $(CFLAGS) -I. -I$(flite_dir)/include -DREGISTER_VOX=register_$(FL_VOX) -DSTANDALONE -c -o $@ $<
 
+tone.o: tone.c
+	$(CC) $(CFLAGS) -I$(flite_dir)/include -DEFLITE -c -o $@ $<
+
 DISTFILES=es.c fs.c soccon.c sockopen.c tone.c es.h language.h lookup.h synthesizer.h configure configure.in Makefile.in COPYING ChangeLog INSTALL README eflite_test.txt
 release:
 	mkdir ../eflite-$(EFLITE_VERSION) && cp $(DISTFILES) ../eflite-$(EFLITE_VERSION) && tar -C.. -czf eflite-$(EFLITE_VERSION).tar.gz $(addprefix eflite-$(EFLITE_VERSION)/,$(DISTFILES)) && rm -r ../eflite-$(EFLITE_VERSION)

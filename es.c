@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.7 2002/03/26 14:04:55 mgorse Exp $
+ * $Id: es.c,v 1.8 2002/04/15 00:44:06 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -290,6 +290,8 @@ int sock = -1;
 setting *settings = NULL;
 char *punct_some = NULL;	/* List of punctuation to speak when "some" selected */
 char *punct_all = NULL;	/* List of punctuation to speak when "all" selected */
+static int tone_volume;
+static int tone_flags = 3;	/* 0x01 == speaker, 0x02 = sound card */
 
 void finish(int sig)
 {
@@ -368,6 +370,15 @@ char *lookup_string(void *context, const char *name)
     p = p->next;
   }
   return NULL;
+}
+
+int lookup_int(char *name, int defval)
+{
+  char *val;
+
+  val = lookup_string(NULL, name);
+  if (!val) return defval;
+  return atoi(val);
 }
 
 void es_synthesize()
@@ -580,7 +591,7 @@ es_log(1, "silent");
     /* tbc - For the FLite server, we could use the FLite audio library for
        this, but that would introduce a dependency on FLite. */
     /* tbd - allow user to set volume */
-    if (!speaker_tone(freq, dur)) dsp_tone(freq, dur, 8192);
+    do_tone(freq, dur, tone_volume, tone_flags);
   }
 }
 
@@ -749,6 +760,10 @@ int main (int argc, char *argv[])
   if (punct_some == NULL) punct_some = "@#$%^&_[]{}\\|";
   punct_all = lookup_string(NULL, "punct_all");
   if (!punct_all) punct_all = "!@#$%^&*()-=_+[]\\|{};':\",./<>?";
+  tone_volume = lookup_int("tone_volume", 8192);
+  if (lookup_int("speaker_tones", 1) == 0) tone_flags &= 0xfe;
+  if (lookup_int("soundcard_tones", 1) == 0) tone_flags &= 0xfd;
+
 
   unlink(sockname);
   sock = sockopen(sockname);

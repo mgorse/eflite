@@ -48,6 +48,22 @@ punct_all: List of punctuation characters to be spoken
 when the punctuation mode is set to "all."  Default is
 !@#$%^&*()-=_+[]\|{};':",./<>?
 
+tone_volume: Volume of generated tones (0-32767).  Default is 8192.
+
+speaker_tones: Allow tones from the PC speaker, if supported.  1 enables;
+0 disables.  Currently, this option is only meaningful under Linux
+and when running as root (regardless of whether we have right access
+to /dev/console).  Default is 1.
+
+soundcard_tones: Allow tones from the sound card, if supported.
+1 enables; 0 disables.  Default is 1.  These tones may be generated
+either by writing directly to /dev/dsp (under Linux) or by using
+FLite's interface (if EFLITE is defined when compiling tone.c, which
+it is by default).  Therefore, the Linux native support is no longer
+necessary for EFlite's operation and is kept around only to retain the
+possibility of de-coupling the Emacspeak server core (es.c and helpers)
+from the Festival Lite support code (fs.c).
+
 === 4. Testing EFlite ===
 Once you have compiled EFlite, I would suggest running "make test".  This
 will run EFlite, passing it a test file as input.  You should hear a message
