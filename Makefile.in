@@ -22,7 +22,7 @@ INSTALLLIBDIR = @libdir@
 INSTALLINCDIR = @includedir@/flite
 flite_dir:=@flite_dir@
 
-#CFLAGS+= -DDEBUG
+#CFLAGS+= -DDEBUG=2
 
 # For making releases
 FLITE_LIBS:=$(flite_dir)/lib/libflite_$(FL_VOX).a $(flite_dir)/lib/libflite_$(FL_LEX).a $(flite_dir)/lib/libflite_$(FL_LANG).a $(flite_dir)/lib/libflite.a

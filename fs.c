@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.3 2002/03/26 00:11:01 mgorse Exp $
+ * $Id: fs.c,v 1.4 2002/04/13 18:55:14 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -143,7 +143,7 @@ void _fini(void)
  */
 void segfault(int sig)
 {
-  es_log("Got a seg fault -- exiting");
+  es_log(1, "Got a seg fault -- exiting");
   printf("Got a seg fault -- exiting.\n");
   _exit(11);
 }
@@ -248,7 +248,7 @@ static void verify_language(struct synth_struct *s)
 
 static void cst_wave_free(cst_wave *w)
 {
-//es_log("cst_wave_free: %8lx", (long)w);
+  es_log(2, "cst_wave_free: %8lx", (long)w);
   if (w)
   {
     cst_free(w->samples);
@@ -271,7 +271,7 @@ static void * play(void *s)
   int speed;
 
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-//es_log("play: init");
+  es_log(2, "play: init");
   for (;!audiodev;)
   {
     pthread_mutex_lock(&wave_mutex);
@@ -288,7 +288,7 @@ static void * play(void *s)
     {
       if (errno == EBUSY)
       {
-//es_log("Audio device is busy; trying again");
+	es_log(2, "Audio device is busy; trying again");
 	if (audiodev) audio_close(audiodev);
 	audiodev = NULL;
 	usleep(20000);
@@ -297,21 +297,21 @@ static void * play(void *s)
     terror("audio_open");
     }
   }
-//es_log("play: %d %d", wave_head, wave_tail);
+  es_log(2, "play: %d %d", wave_head, wave_tail);
   while (wave_head < wave_synthpos)
   {
-//es_log("play: wave_head=%d", wave_head);
+    es_log(2, "play: wave_head=%d", wave_head);
     if (waves[wave_head] == NULL)
     {
       /* There will be more data, but it isn't ready yet. */
-//es_log("wave[%d] is NULL, setting pas", wave_head);
+      es_log(2, "wave[%d] is NULL, setting pas", wave_head);
       pas = 1;
-//es_log("play: locking wave mutex");
+      es_log(2, "play: locking wave mutex");
       pthread_mutex_lock(&wave_mutex);
-//es_log("play: got wave mutex");
+      es_log(2, "play: got wave mutex");
       close_audiodev();
       pthread_mutex_unlock(&wave_mutex);
-//es_log("play: unlocked wave mutex");
+      es_log(2, "play: unlocked wave mutex");
       return NULL;
     }
     speed = waves[wave_head]->sample_rate;
@@ -323,7 +323,7 @@ static void * play(void *s)
     {
 audio_write(audiodev, waves[wave_head]->samples + (1500000 / ((synth_t *)s)->state->param[S_SPEED]), playlen * 2);
     }
-//es_log("play: syncing");
+    es_log(2, "play: syncing");
     audio_flush(audiodev);
     time_left -= (float)playlen / waves[wave_head]->sample_rate;
     pthread_mutex_lock(&wave_mutex);
@@ -331,16 +331,16 @@ audio_write(audiodev, waves[wave_head]->samples + (1500000 / ((synth_t *)s)->sta
     waves[wave_head++] = NULL;
     if (wave_head > (wave_size >> 1))
     {
-//es_log("play: compacting wave pointers");
+      es_log(1, "play: compacting wave pointers");
       memcpy(waves, waves + wave_head, (wave_tail - wave_head) * sizeof(cst_wave *));
       wave_tail -= wave_head;
       wave_synthpos -= wave_head;
       wave_head = 0;
     }
     pthread_mutex_unlock(&wave_mutex);
-//es_log("play: unlocked wave mutex");
+    es_log(2, "play: unlocked wave mutex");
   }
-//es_log("play: loop over: %d %d", wave_head, wave_tail);
+  es_log(2, "play: loop over: %d %d", wave_head, wave_tail);
   pthread_mutex_lock(&wave_mutex);
   if (wave_head == wave_tail)
   {
@@ -349,7 +349,7 @@ audio_write(audiodev, waves[wave_head]->samples + (1500000 / ((synth_t *)s)->sta
   }
   else pas = 1;	/* there is more data -- need to re-enter */
   pthread_mutex_unlock(&wave_mutex);
-//es_log("play: unlocked wave mutex and exiting");
+  es_log(2, "play: unlocked wave mutex and exiting");
   return NULL;
 }
 
@@ -360,39 +360,39 @@ static void * synthesize(void *s)
   int s_count_enter = s_count;
 
   if (!text_tail) return NULL;
-//es_log("synthesize: entering");
+  es_log(2, "synthesize: entering");
   wave_synthpos = 0xffff;
   while (text[text_head])
   {
-//es_log("synthesize: %d %d", text_head, text_tail);
+    es_log(2, "synthesize: %d %d", text_head, text_tail);
     wptr = flite_text_to_wave(text + text_head, v);
     if (time_left > 3)
     {
-//es_log("time_left=%f -- going to sleep\n", time_left);
+      es_log(1, "time_left=%f -- going to sleep\n", time_left);
       usleep(time_left * 750000);
     }
     if (s_count != s_count_enter)
     {
-//es_log("synthesize: canceling");
+      es_log(2, "synthesize: canceling");
       cst_wave_free(wptr);
       return NULL;
     }
-//es_log("synthesize: %8lx %8lx\n", (long)wptr, (long)wptr->samples);
-es_log("text=%s", text + text_head);
+    es_log(2, "synthesize: %8lx %8lx\n", (long)wptr, (long)wptr->samples);
+    es_log(1, "text=%s", text + text_head);
     while (text[text_head]) text_head++;
     text_head++;	/* This is not a bug. */
     pthread_mutex_lock(&text_mutex);
     if (wave_thread_active)
     {
     wml = 1;
-//es_log("synthesize: locking wave mutex");
+    es_log(2, "synthesize: locking wave mutex");
       pthread_mutex_lock(&wave_mutex);
-//es_log("synthesize: got wave mutex");
+    es_log(2, "synthesize: got wave mutex");
     }
     /* Compact buffer if it seems like a good thing to do */
     if (text_head > (text_size >> 1))
     {
-//es_log("synthesizer: compacting buffer");
+      es_log(1, "synthesizer: compacting buffer");
       memcpy(text, text + text_head, text_tail - text_head + 1);
       text_tail -= text_head;
       if (text_synthpos != -1) text_synthpos -= text_head;
@@ -400,7 +400,7 @@ es_log("text=%s", text + text_head);
     }
     if (wave_size == wave_tail + 1)
     {
-//es_log("synthesize: allocating more wave memory");
+      es_log(1, "synthesize: allocating more wave memory");
       wave_size <<= 1;
       waves = (cst_wave **)realloc(waves, wave_size * sizeof(cst_wave *));
       if (!waves)
@@ -411,23 +411,23 @@ es_log("text=%s", text + text_head);
     }
     waves[wave_tail++] = wptr;
     if (text_head == text_tail) wave_synthpos = wave_tail;
-//es_log("synthesize: after adding: %d %d", wave_head, wave_tail);
+    es_log(2, "synthesize: after adding: %d %d", wave_head, wave_tail);
     if (wml)
     {
       pthread_mutex_unlock(&wave_mutex);
-//es_log("synthesize: unlocked wave mutex");
+      es_log(2, "synthesize: unlocked wave mutex");
       wml = 0;
     }
     if (pas)
     {
-//es_log("pas set, creating play thread");
-//es_log("synthesize: locking wave mutex");
+      es_log(2, "pas set, creating play thread");
+      es_log(2, "synthesize: locking wave mutex");
       pthread_mutex_lock(&wave_mutex);
-//es_log("synthesize: got wave mutex");
+      es_log(2, "synthesize: got wave mutex");
       wave_thread_active = 1;
       pthread_create(&wave_thread, &ta, play, (void *)s);
       pthread_mutex_unlock(&wave_mutex);
-//es_log("synthesize: unlocked wave mutex");
+      es_log(2, "synthesize: unlocked wave mutex");
       pas = 0;
     }
     pthread_mutex_unlock(&text_mutex);
@@ -435,7 +435,7 @@ es_log("text=%s", text + text_head);
   pthread_mutex_lock(&text_mutex);
   text_head = text_tail = text_thread_active = 0;
   pthread_mutex_unlock(&text_mutex);
-//es_log("synthesize: dying: %d %d", wave_head, wave_tail);
+  es_log(2, "synthesize: dying: %d %d", wave_head, wave_tail);
   return NULL;
 }
 
@@ -470,7 +470,7 @@ static int s_synth(struct synth_struct *s, unsigned char *buffer)
   if (!text_thread_active)
   {
     pthread_mutex_init(&text_mutex, NULL);
-//es_log("s_synth: creating new text thread");
+    es_log(2, "s_synth: creating new text thread");
     text_thread_active = 1;
     pthread_create(&text_thread, &ta, synthesize, s);
   }
@@ -492,14 +492,14 @@ static int s_flush(synth_t *s)
   text_synthpos = text_tail;
   if (!wave_thread_active)
   {
-//es_log("s_flush: locking wave mutex");
+    es_log(2, "s_flush: locking wave mutex");
     pthread_mutex_lock(&wave_mutex);
-//es_log("s_flush: got wave mutex");
+    es_log(2, "s_flush: got wave mutex");
     wave_thread_active = 1;
-//es_log("es_flush: creating play thread");
+    es_log(2, "es_flush: creating play thread");
     result = pthread_create(&wave_thread, &ta, play, s);
   pthread_mutex_unlock(&wave_mutex);
-//es_log("s_flush: unlocked wave mutex");
+    es_log(2, "s_flush: unlocked wave mutex");
   return result;
   }
     return 0;
@@ -515,18 +515,18 @@ static int s_clear(synth_t *s)
 {
   int i;
 
-//es_log("s_clear: text=%d %d, wave=%d %d", text_head, text_tail, wave_head, wave_tail);
-//es_log("s_clear: locking wave mutex");
+  es_log(2, "s_clear: text=%d %d, wave=%d %d", text_head, text_tail, wave_head, wave_tail);
+  es_log(2, "s_clear: locking wave mutex");
   pthread_mutex_lock(&wave_mutex);
-//es_log("s_clear: got wave mutex");
+  es_log(2, "s_clear: got wave mutex");
   if (text_thread_active)
   {
-//es_log("canceling text thread: %d %d", text_head, text_tail);
+    es_log(2, "canceling text thread: %d %d", text_head, text_tail);
     s_count++;
   }
   if (wave_thread_active)
   {
-//es_log("canceling wave thread: %d %d", wave_head, wave_tail);
+    es_log(2, "canceling wave thread: %d %d", wave_head, wave_tail);
     pthread_cancel(wave_thread);
   }
   pthread_mutex_unlock(&wave_mutex);
@@ -535,7 +535,7 @@ static int s_clear(synth_t *s)
      deadlock. */
   pthread_mutex_destroy(&wave_mutex);
   pthread_mutex_init(&wave_mutex, NULL);
-//es_log("s_clear: unlocked wave mutex");
+  es_log(2, "s_clear: unlocked wave mutex");
   if (audiodev)
   {
     audio_drain(audiodev);
@@ -550,14 +550,14 @@ static int s_clear(synth_t *s)
     {
       if (waves[i]->samples)
       {
-//es_log("s_clear: freeing samples: %8lx", (long)waves[i]->samples);
+	es_log(2, "s_clear: freeing samples: %8lx", (long)waves[i]->samples);
 	cst_free(waves[i]->samples);
       }
       cst_free(waves[i]);
       waves[i] = NULL;
     }
   }
-//es_log("mem=%d", cst_alloc_out);
+  //es_log(2, "mem=%d", cst_alloc_out);
   text_head = text_tail = text_synthpos = 0;
   wave_head = wave_tail = wave_synthpos = 0;
   text_thread_active = wave_thread_active = 0;

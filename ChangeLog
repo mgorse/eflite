@@ -1,3 +1,9 @@
+04/14/02:
+- Release v0.2.2
+- Adjust rate conversion in es.c to more accurately translate to wpm for FLite
+	(now x23/4 instead of x9)
+- Add "debug levels" to es_log (define DEBUG=1 or DEBUG=2)
+
 04/13/02:
 - (hopefully) fixed bug which could cause text not to be spoken when several
   sounds are queued
@@ -6,6 +12,7 @@
 - Call es_log for notification messages formerly printed to stderr
 - Add eflite as a dependency to "make test"
 - Move call to s_close() below unlink call to avoid restart hangups
+
 03/25/02:
 - Add eflite_test.txt test file, add and document "Make test"
 - Have s_close wait for text to be spoken before exiting

@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.6 2002/03/26 00:11:01 mgorse Exp $
+ * $Id: es.c,v 1.7 2002/03/26 14:04:55 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -416,7 +416,7 @@ void es_addtext(CLIENT *client, char *buf)
 }
 
 #ifdef DEBUG
-void es_log(const char *text, ...)
+void es_log(int debuglevel, const char *text, ...)
 {
 #ifdef DEBUG
   char buf[200];
@@ -424,6 +424,7 @@ void es_log(const char *text, ...)
   FILE *fp;
   char logname[200];
 
+  if (debuglevel > DEBUG) return;
   sprintf(logname, "%s/es.log", getenv("HOME"));
   va_start(arg, text);
   vsnprintf(buf, 200, text, arg);
@@ -547,7 +548,12 @@ void parse(CLIENT *client, char *buf)
   else if ((!strcmp (buf, "r") || !strcmp(buf, "tts_set_speech_rate")) && token[0])
   {
     if (text_buffered) es_synthesize(client);
-    client->param[0] = atoi(token[0]) * 10;
+    /* In the libspeech api, a rate of 1000 is defined as "normal."  Thus, fs.c
+	defines a rate of 1000 as equivalent to FLite's normal rate (about 175
+	wpm).  The following conversion is accurate for it but may not be
+	accurate for other synths.  It may be useful to add an api function to
+	get the proper rate in wpm. */
+    client->param[0] = (atoi(token[0]) * 23) / 4;
   }
   else if (!strcmp (buf, "reset"))
   {
@@ -555,7 +561,7 @@ void parse(CLIENT *client, char *buf)
   }
   else if (!strcmp (buf, "s"))
   {
-es_log("silent");
+es_log(1, "silent");
     lang->synth->clear(lang->synth);
   }
   else if (!strcmp(buf, "tts_set_punctuations") && token[0])
@@ -611,7 +617,7 @@ int handle(CLIENT *client)
     size += read(client->fd, buf + size, 200);
     buf[size] = 0;
     }
-es_log("handle: %s", buf);
+es_log(1, "handle: %s", buf);
   p = buf;
   for (i = j = 0; i < size; i++)
   {
@@ -647,7 +653,7 @@ void terror(const char *s)
 {
   int errnum = errno;
 
-  es_log("%s: %s", s, strerror(errnum));
+  es_log(1, "%s: %s", s, strerror(errnum));
   fprintf(stderr, "%s: %s\n", s, strerror(errnum));
   exit(errnum);
 }
@@ -658,7 +664,7 @@ void passthrough(char *infile, int outfd)
   int size;
   int fd;
 
-  es_log("es: reading input from %s", infile);
+  es_log(1, "es: reading input from %s", infile);
   fd = open(infile, O_RDONLY);
   if (fd == -1) terror("open");
   while (1)
@@ -753,7 +759,7 @@ int main (int argc, char *argv[])
   }
   /* The following line doesn't seem to work.  Why not? */
   fchmod(sock, 0666);
-  es_log("Socket initialized\n");
+  es_log(1, "Socket initialized\n");
   signal(SIGINT, finish);
   signal(SIGTERM, finish);
   //signal (SIGHUP, SIG_IGN);
@@ -782,7 +788,7 @@ int main (int argc, char *argv[])
       {
 	client = realloc(client, ++maxclients * sizeof(CLIENT));
       }
-es_log("Accepting connection\n");
+es_log(1, "Accepting connection\n");
       client[numclients++].fd = accept(sock, 0, 0);
       client_init(&client[i]);
       continue;
@@ -793,7 +799,7 @@ es_log("Accepting connection\n");
       {
 	if (handle(&client[i]))
 	{
-es_log("Deactivating a client\n");
+es_log(1, "Deactivating a client\n");
 	  /* Deactivate client */
 	  close(client[i].fd);
 	  memcpy(client + i, client + i + 1, sizeof(CLIENT) * (--numclients - i));

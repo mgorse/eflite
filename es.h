@@ -21,7 +21,7 @@ struct setting
 /* es.c */
 void terror(const char *s);
 #ifdef DEBUG
-void es_log(const char *text, ...);
+void es_log(int debuglevel, const char *text, ...);
 #else
 #define es_log(...)
 #endif
