@@ -1,7 +1,8 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.18 2003/02/01 18:42:30 mgorse Exp $
+ * $Id: es.c,v 1.19 2003/05/25 23:33:48 mgorse Exp $
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -11,6 +12,7 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <signal.h>
 #include <errno.h>
 #include "es.h"
@@ -740,6 +742,12 @@ int is_dir(char *name)
   return S_ISDIR(st.st_mode);
 }
 
+static struct option longopts[] =
+{
+  { "version", 0, NULL, 'v' },
+  { NULL, 0, NULL, 0 }
+};
+
 int main (int argc, char *argv[])
 {
   fd_set fds;
@@ -753,7 +761,7 @@ int main (int argc, char *argv[])
   int more_opts = 1;
   int debug = 0;
 
-  while (more_opts) switch(getopt(argc, argv, "df:"))
+  while (more_opts) switch(getopt_long(argc, argv, "df:v", (struct option *)&longopts, NULL))
   {
   case 'd':
     debug = 1;
@@ -761,6 +769,9 @@ int main (int argc, char *argv[])
   case 'f':
     input = optarg;
     break;
+  case 'v':
+    printf("Eflite 0.3.8\n");
+    exit(0);
   default: more_opts = 0;
   }
   /* The following allows an input file name to be specified on the command
