@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.11 2002/05/20 12:51:02 mgorse Exp $
+ * $Id: es.c,v 1.12 2002/05/28 01:50:13 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -512,6 +512,7 @@ void parse(CLIENT *client, char *buf)
     client->param[1] = tmp;
   }
   memset(token, 0, sizeof(token));
+  while (*buf == ' ') buf++;
   for (i = state = count = 0; buf[i]; i++)
   {
     switch (state)

@@ -1,3 +1,6 @@
+05/31/02:
+- parse(): bypass all spaces before tokenizing input line
+
 05/27/02:
 - Reinstated segfault handler when DEBUG is defined (was removed accidentally)
 - Have the child act as the daemon and call daemon() to prevent premature exits
