@@ -1,0 +1,36 @@
+03/05/02:
+- Release v0.2.1
+- Add vol parameter to dsp_tone(), lower volume of generated dsp tones
+- Add ChangeLog to DISTFILES in Makefile.in
+- Minor code and documentation clean-ups
+- play(): Remove check for EBADF if audio_open returns fd of -1
+- Add (dumb) sig11 handler
+- Fix bug (introduced by yesterday's fix) where the parser would incorrectly
+assume that a line break following a simple command after a complex command
+was part of a complex command
+
+03/04/02:
+- Fix bug where multi-line text strings would be truncated [reported by bob@rattlesnake.com]
+03/03/02:
+- Release v0.2.0
+- Add configure.in script
+
+02/26/02:
+ * Release v0.1.3
+ * Work-around for FLite pronouncing "a" as a short a when alone
+- Work-around for Emacspeak passing in a directory name as an argument to
+EFlite
+
+02/25/02:
+Release v0.1.2
+- Fix bug that would cause a crash if "language" is not defined in the
+configuration file
+- Add sections to INSTALL documentation on configuring and testing
+
+02/24/02:
+Release v0.1.1
+- Parameterize the voice, language, and lexicon libraries in the Makefile and
+fs.c.
+
+02/23/02:
+Release (v0.1.0 (first release)
