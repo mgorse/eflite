@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.17 2003/01/20 17:51:54 mgorse Exp $
+ * $Id: es.c,v 1.18 2003/02/01 18:42:30 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -751,9 +751,13 @@ int main (int argc, char *argv[])
   int child;
   char *input = NULL;
   int more_opts = 1;
+  int debug = 0;
 
-  while (more_opts) switch(getopt(argc, argv, "f:"))
+  while (more_opts) switch(getopt(argc, argv, "df:"))
   {
+  case 'd':
+    debug = 1;
+    break;
   case 'f':
     input = optarg;
     break;
@@ -769,7 +773,7 @@ int main (int argc, char *argv[])
   if (!sockname) sockname = "/tmp/es.socket";
   local_fd = sockconnect(sockname);
   if (local_fd != -1) passthrough(infile, local_fd);
-  if ((child = fork()))
+  if (!debug && (child = fork()))
   {
     usleep(200000);
     local_fd = sockconnect(sockname);
@@ -808,7 +812,7 @@ int main (int argc, char *argv[])
     es_log(1 | LOG_STDERR, "Error initializing language\n");
     exit (1);
   }
-  daemon(0, 0);
+  if (!debug) daemon(0, 0);
   for (i = 0; i < NPARAMS; i++) lang->synth->get_param(lang->synth, i, &default_param[i]);
 
   for (;;)
