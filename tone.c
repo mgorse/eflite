@@ -1,14 +1,14 @@
 /* tone.c - code for generating tones
- * $Id$
+ * $Id: tone.c,v 1.3 2002/05/01 03:59:13 mgorse Exp $
  */
 
 #include <errno.h>
 #include <math.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "es.h"
 
 #ifdef EFLITE
-#include "flite.h"
 #elif defined(__linux__)
 #define LINUX_NATIVE
 #include <sys/ioctl.h>
@@ -37,59 +37,69 @@ static int speaker_tone(int freq, int dur)
 
 #define PI 3.141592653589793238
 
-#ifndef DUMMY
+#ifdef EFLITE
+cst_wave *generate_tone(int freq, int dur, int vol)
+{
+  float max = 2 * PI * freq * dur / 1000;
+  float step = 2 * PI * freq / 8000;
+  float n;
+  int i;
+  cst_wave *wptr;
+
+  wptr = cst_alloc(cst_wave, 1);
+  if (wptr == NULL) return wptr;
+  wptr->num_samples = max / step;
+  wptr->samples = cst_alloc(short, wptr->num_samples);
+  if (wptr->samples == NULL)
+  {
+    free(wptr);
+    return NULL;
+  }
+  wptr->num_channels = 1;
+  wptr->sample_rate = 8000;
+  for (i = 0,n = 0; n < max; n += step,i++)
+  {
+    wptr->samples[i] = sin(n) * vol;
+  }
+  return wptr;
+}
+#endif	/* EFLITE */
+
+#ifdef LINUX_NATIVE
 static int soundcard_tone(int freq, int dur, int vol)
 {
-#ifdef LINUX_NATIVE
   int fd;
   int fmt = AFMT_S16_LE;
   int stereo = 0;
-#elif defined(EFLITE)
-  cst_audiodev *ad;
-#endif
   int speed = 44100;
   float max = 2 * PI * freq * dur / 1000;
   float step = 2 * PI * freq / speed;
   float n;
   short val;
 
-#ifdef LINUX_NATIVE
   fd = open("/dev/dsp", O_WRONLY);
   if (fd == -1) return -1;
   ioctl(fd, SNDCTL_DSP_SETFMT, &fmt);
   ioctl(fd, SNDCTL_DSP_STEREO, &stereo);
   ioctl(fd, SNDCTL_DSP_SPEED, &speed);
-#elif defined(EFLITE)
-  ad = audio_open(44100, 1, CST_AUDIO_LINEAR16);
-  if (ad == NULL) return -1;
-#endif
   for (n = 0; n < max; n += step)
   {
     val = sin(n) * vol;
-#ifdef LINUX_NATIVE
     write(fd, &val, 2);
-#elif defined(EFLITE)
-    audio_write(ad, &val, 2);
-#endif
   }
-#ifdef LINUX_NATIVE
   close(fd);
-#elif defined(EFLITE)
-  audio_close(ad);
-#endif
   return 0;
 }
-#endif	/* DUMMY */
+#endif	/* LINUX_NATIVE */
 
-int do_tone(int freq, int dur, int vol, int flags)
+void do_tone(struct synth_struct *s, int freq, int dur, int vol, int flags)
 {
 #ifdef LINUX_NATIVE
-  if ((flags & 0x01) && !speaker_tone(freq, dur)) return 0;
-#endif
-#ifndef DUMMY
-  if ((flags & 0x02) && !soundcard_tone(freq, dur, vol)) return 0;
+  if ((flags & 0x01) && !speaker_tone(freq, dur)) return;
+  if ((flags & 0x02) && !soundcard_tone(freq, dur, vol)) return;
+#elif defined(EFLITE)
+  if (flags & 0x02) add_tone_command(s, freq, dur, vol);
 #else
   es_log(2, "tones not supported on this platform");
 #endif
-  return -1;
 }

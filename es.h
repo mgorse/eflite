@@ -26,6 +26,12 @@ void es_log(int debuglevel, const char *text, ...);
 #define es_log(...)
 #endif
 
+#ifdef EFLITE
+#include "flite.h"
+/* fs.c */
+void add_tone_command(struct synth_struct *s, int freq, int dur, int vol);
+#endif
+
 /* soccon.c */
 int sockconnect(const char *fname);
 
@@ -33,4 +39,7 @@ int sockconnect(const char *fname);
 int sockopen(const char *fname);
 
 /* tone.c */
-int do_tone(int freq, int dur, int vol, int flags);
+void do_tone(struct synth_struct *s, int freq, int dur, int vol, int flags);
+#ifdef EFLITE
+cst_wave *generate_tone(int freq, int dur, int vol);
+#endif

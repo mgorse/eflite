@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.5 2002/04/15 00:44:06 mgorse Exp $
+ * $Id: fs.c,v 1.6 2002/05/01 03:59:13 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -22,13 +22,13 @@
 #ifndef STANDALONE
 #include <dlfcn.h>
 #endif
-#include "es.h"
-
 #include "flite.h"
 #include "flite_version.h"
 
 #include "synthesizer.h"
 #include <math.h>
+#include "es.h"
+
 
 static int  s_close(synth_t *s);
 static int  s_synth(synth_t *s, unsigned char *buffer);
@@ -83,18 +83,28 @@ static int     current_language = -1;
 static int     ref_count = 0;
 static FILE    *debug_fp = NULL;
 
+  typedef enum { NONE, SPEECH, TONE } ac_type;
+
+typedef struct
+{
+  ac_type type;
+  void *data;
+} AUDIO_COMMAND;
+
+#if 0	/* tbd - figure out what these variables are supposed to be used for */
 /*static int sync_mark_no = 0;*/	/* currently used number */
 /*static struct timeval mark;*/	/* time the mark has been set */
+#endif
 
 /* server-specific variables */
 static cst_voice *v = NULL;
 static pthread_t wave_thread;
 static int wave_thread_active;
 static pthread_mutex_t wave_mutex;
-static cst_wave **waves;
-static int wave_size;
-static int wave_head, wave_tail;
-static int wave_synthpos;	/* largest index to play + 1 */
+static AUDIO_COMMAND *ac;
+static int ac_size;
+static int ac_head, ac_tail;
+static int ac_synthpos;	/* largest index to play + 1 */
 static pthread_t text_thread;
 static int text_thread_active;
 static pthread_mutex_t text_mutex;
@@ -139,12 +149,17 @@ void _fini(void)
  * Return 0 on success, 1 on error.
  * ----------------------------------------------------------------------
  */
+#ifdef DEBUG
+/* This code seems to cause lingering processes in the event of a crash */
 void segfault(int sig)
 {
+  extern char *sockname;
   es_log(1, "Got a seg fault -- exiting");
   printf("Got a seg fault -- exiting.\n");
+  unlink(sockname);
   _exit(11);
 }
+#endif
 
 synth_t *synth_open(void *context, lookup_string_t lookup)
 {
@@ -159,7 +174,9 @@ synth_t *synth_open(void *context, lookup_string_t lookup)
     if (ref_count == 0) {
       unlink("log");
 
+#ifdef DEBUG
       signal(SIGSEGV, segfault);
+#endif
       flite_init();
       v = REGISTER_VOX(NULL);
       pthread_attr_init(&ta);
@@ -169,10 +186,10 @@ synth_t *synth_open(void *context, lookup_string_t lookup)
       text = (char *)malloc(text_size);
       text_head = text_tail = text_synthpos = 0;
       wave_thread_active = 0;
-      wave_size = 64;
-      waves = (cst_wave **)malloc(wave_size * sizeof(cst_wave *));
-      wave_head = wave_tail = wave_synthpos = 0;
-      if (!waves || !text) return NULL;
+      ac_size = 64;
+      ac = (AUDIO_COMMAND *)malloc(ac_size * sizeof(AUDIO_COMMAND));
+      ac_head = ac_tail = ac_synthpos = 0;
+      if (!ac || !text) return NULL;
       pthread_mutex_init(&wave_mutex, NULL);
       time_left = 0;
     }
@@ -213,9 +230,9 @@ static int s_close(synth_t *s)
 	/* Wait for any speech to be spoken */
 	while (text_thread_active || wave_thread_active) usleep(50000);
 	if (text) free(text);
-	if (waves) free(waves);
+	if (ac) free(ac);
 	text = NULL;
-	waves = NULL;
+	ac = NULL;
     }
 
     return 0;
@@ -246,12 +263,22 @@ static void verify_language(struct synth_struct *s)
 
 static void cst_wave_free(cst_wave *w)
 {
-  es_log(2, "cst_wave_free: %8lx", (long)w);
+  es_log(2, "cst_wave_free: %p", w);
   if (w)
   {
     cst_free(w->samples);
     cst_free(w);
   }
+}
+
+static void ac_destroy(AUDIO_COMMAND *ac)
+{
+  switch (ac->type)
+  {
+  case SPEECH: case TONE: cst_wave_free(ac->data); break;
+  default: break;
+  }
+  ac->type = NONE;
 }
 
 static void close_audiodev()
@@ -266,43 +293,44 @@ static void close_audiodev()
 static void * play(void *s)
 {
   int playlen;
-  int speed;
+  int skip;
+  cst_wave *wptr;
 
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
   es_log(2, "play: init");
   for (;!audiodev;)
   {
     pthread_mutex_lock(&wave_mutex);
-    if (!waves[0])
+    if (!ac[0].type != NONE)
     {
       pthread_mutex_unlock(&wave_mutex);
-      pas = (wave_synthpos > 0? 1: 0);
+      pas = (ac_synthpos > 0? 1: 0);
       return NULL;
     }
+    wptr = ac[0].data;
     /* N.b. Following assumes that all samples have the same format */
-    audiodev = audio_open(waves[0]->sample_rate, waves[0]->num_channels, CST_AUDIO_LINEAR16);
+    audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
     pthread_mutex_unlock(&wave_mutex);
     if (!audiodev || (int)audiodev->platform_data == -1)
     {
       if (errno == EBUSY)
       {
 	es_log(2, "Audio device is busy; trying again");
-	if (audiodev) audio_close(audiodev);
-	audiodev = NULL;
+	close_audiodev();
 	usleep(20000);
 	continue;
       }
     terror("audio_open");
     }
   }
-  es_log(2, "play: %d %d", wave_head, wave_tail);
-  while (wave_head < wave_synthpos)
+  es_log(2, "play: %d %d", ac_head, ac_tail);
+  while (ac_head < ac_synthpos)
   {
-    es_log(2, "play: wave_head=%d", wave_head);
-    if (waves[wave_head] == NULL)
+    es_log(2, "play: ac_head=%d type=%d", ac_head, ac[ac_head].type);
+    if (ac[ac_head].type == NONE)
     {
       /* There will be more data, but it isn't ready yet. */
-      es_log(2, "wave[%d] is NULL, setting pas", wave_head);
+      es_log(2, "ac[%d] is inactive, setting pas", ac_head);
       pas = 1;
       es_log(2, "play: locking wave mutex");
       pthread_mutex_lock(&wave_mutex);
@@ -312,37 +340,46 @@ static void * play(void *s)
       es_log(2, "play: unlocked wave mutex");
       return NULL;
     }
-    speed = waves[wave_head]->sample_rate;
-    playlen = waves[wave_head]->num_samples - (3000000 / ((synth_t *)s)->state->param[S_SPEED]);
-//es_log("play: wave=%8lx, samples=%8lx, num_samples=%d playlen=%d", (long)waves[wave_head], (long)waves[wave_head]->samples, waves[wave_head]->num_samples, playlen);
-    if (playlen > 0 && playlen < 500) playlen += 1000000 / ((synth_t *)s)->state->param[S_SPEED];
-    time_left += (float)playlen / waves[wave_head]->sample_rate;
+    wptr = ac[ac_head].data;
+    if (ac[ac_head].type == SPEECH)
+    {
+      skip = 1500000 / ((synth_t *)s)->state->param[S_SPEED];
+      playlen = wptr->num_samples - (skip * 2);
+      if (playlen > 0 && playlen < 500) playlen += (skip * 2) / 3;
+    }
+    else
+    {
+      skip = 0;
+      playlen = wptr->num_samples;
+    }
+    if (playlen < 0) playlen = 0;
+    es_log(2, "play: wave=%p, samples=%p, num_samples=%d skip=%d playlen=%d", wptr, wptr->samples, wptr->num_samples, skip, playlen);
+    time_left += (float)playlen / wptr->sample_rate;
     if (playlen > 0)
     {
-audio_write(audiodev, waves[wave_head]->samples + (1500000 / ((synth_t *)s)->state->param[S_SPEED]), playlen * 2);
+audio_write(audiodev, wptr->samples + skip, playlen * 2);
     }
     es_log(2, "play: syncing");
     audio_flush(audiodev);
-    time_left -= (float)playlen / waves[wave_head]->sample_rate;
+    time_left -= (float)playlen / wptr->sample_rate;
     pthread_mutex_lock(&wave_mutex);
-    cst_wave_free(waves[wave_head]);
-    waves[wave_head++] = NULL;
-    if (wave_head > (wave_size >> 1))
+    ac_destroy(&ac[ac_head]);
+    if (++ac_head > (ac_size >> 1))
     {
       es_log(1, "play: compacting wave pointers");
-      memcpy(waves, waves + wave_head, (wave_tail - wave_head) * sizeof(cst_wave *));
-      wave_tail -= wave_head;
-      wave_synthpos -= wave_head;
-      wave_head = 0;
+      memmove(ac, ac + ac_head, (ac_tail - ac_head) * sizeof(AUDIO_COMMAND));
+      ac_tail -= ac_head;
+      ac_synthpos -= ac_head;
+      ac_head = 0;
     }
     pthread_mutex_unlock(&wave_mutex);
     es_log(2, "play: unlocked wave mutex");
   }
-  es_log(2, "play: loop over: %d %d", wave_head, wave_tail);
+  es_log(2, "play: loop over: %d %d", ac_head, ac_tail);
   pthread_mutex_lock(&wave_mutex);
-  if (wave_head == wave_tail)
+  if (ac_head == ac_tail)
   {
-    wave_head = wave_tail = wave_thread_active = 0;
+    ac_head = ac_tail = wave_thread_active = 0;
     close_audiodev();
   }
   else pas = 1;	/* there is more data -- need to re-enter */
@@ -356,14 +393,33 @@ static void * synthesize(void *s)
   cst_wave *wptr = NULL;
   int wml = 0;	/* wave mutex locked */
   int s_count_enter = s_count;
+  int command;
 
   if (!text_tail) return NULL;
   es_log(2, "synthesize: entering");
-  wave_synthpos = 0xffff;
+  ac_synthpos = 0xffff;
   while (text[text_head])
   {
     es_log(2, "synthesize: %d %d", text_head, text_tail);
-    wptr = flite_text_to_wave(text + text_head, v);
+    switch ((command = text[text_head++]))
+    {
+    case 1:	/* text */
+      wptr = flite_text_to_wave(text + text_head, v);
+      break;
+    case 2:	/* tone */
+    {
+      int freq, dur, vol;
+      if (sscanf(text + text_head, "%d %d %d", &freq, &dur, &vol) != 3)
+      {
+	es_log(1, "unable to scan tone: %s", text + text_head);
+	break;
+      }
+      wptr = generate_tone(freq, dur, vol);
+      break;
+      }
+    default:
+      es_log(1, "synthesize: internal error: unknown command: %x", text[text_head - 1]);
+    }
     if (time_left > 3)
     {
       es_log(1, "time_left=%f -- going to sleep\n", time_left);
@@ -375,7 +431,7 @@ static void * synthesize(void *s)
       cst_wave_free(wptr);
       return NULL;
     }
-    es_log(2, "synthesize: %8lx %8lx\n", (long)wptr, (long)wptr->samples);
+    es_log(2, "synthesize: %p %p\n", wptr, wptr->samples);
     es_log(1, "text=%s", text + text_head);
     while (text[text_head]) text_head++;
     text_head++;	/* This is not a bug. */
@@ -396,20 +452,21 @@ static void * synthesize(void *s)
       if (text_synthpos != -1) text_synthpos -= text_head;
       text_head = 0;
     }
-    if (wave_size == wave_tail + 1)
+    if (ac_size == ac_tail + 1)
     {
       es_log(1, "synthesize: allocating more wave memory");
-      wave_size <<= 1;
-      waves = (cst_wave **)realloc(waves, wave_size * sizeof(cst_wave *));
-      if (!waves)
+      ac_size <<= 1;
+      ac = (AUDIO_COMMAND *)realloc(ac, ac_size * sizeof(AUDIO_COMMAND));
+      if (!ac)
       {
-	fprintf(stderr, "Out of memory, wave_size=%d\n", wave_size);
+	fprintf(stderr, "Out of memory, ac_size=%d\n", ac_size);
 	exit(1);
       }
     }
-    waves[wave_tail++] = wptr;
-    if (text_head == text_tail) wave_synthpos = wave_tail;
-    es_log(2, "synthesize: after adding: %d %d", wave_head, wave_tail);
+    ac[ac_tail].type = command;
+    ac[ac_tail++].data = wptr;
+    if (text_head == text_tail) ac_synthpos = ac_tail;
+    es_log(2, "synthesize: after adding: %d %d", ac_head, ac_tail);
     if (wml)
     {
       pthread_mutex_unlock(&wave_mutex);
@@ -433,7 +490,7 @@ static void * synthesize(void *s)
   pthread_mutex_lock(&text_mutex);
   text_head = text_tail = text_thread_active = 0;
   pthread_mutex_unlock(&text_mutex);
-  es_log(2, "synthesize: dying: %d %d", wave_head, wave_tail);
+  es_log(2, "synthesize: dying: %d %d", ac_head, ac_tail);
   return NULL;
 }
 
@@ -443,14 +500,14 @@ static void * synthesize(void *s)
  * arrives.
  * ----------------------------------------------------------------------
  */
-static int s_synth(struct synth_struct *s, unsigned char *buffer)
+static void add_command(struct synth_struct *s, int id, unsigned char *buffer)
 {
   int len;
 
   assert(s->state->initialized);
   len = strlen(buffer);
   if (text_thread_active) pthread_mutex_lock(&text_mutex);
-  if (text_tail + len + 2 >= text_size)
+  if (text_tail + len + 3 >= text_size)
   {
     text_size <<= 1;
     text = (char *)realloc(text, text_size);
@@ -460,10 +517,11 @@ static int s_synth(struct synth_struct *s, unsigned char *buffer)
       exit(1);
     }
   }
+  text[text_tail++] = (char)id;
   strcpy(text + text_tail, buffer);
   text_tail += len + 1;
   /* The below line is important.  An extra \0 indicates to the synthesize
-     thread that there are no more strings. */
+     thread that there is no more data. */
   text[text_tail] = '\0';
   if (!text_thread_active)
   {
@@ -473,7 +531,21 @@ static int s_synth(struct synth_struct *s, unsigned char *buffer)
     pthread_create(&text_thread, &ta, synthesize, s);
   }
   else pthread_mutex_unlock(&text_mutex);
+  return;
+}
+
+static int s_synth(struct synth_struct *s, unsigned char *buffer)
+{
+  add_command(s, 1, buffer);
   return 0;
+}
+
+void add_tone_command(struct synth_struct *s, int freq, int dur, int vol)
+{
+  char buf[40];
+
+  sprintf(buf, "%d %d %d", freq, dur, vol);
+  add_command(s, 2, buf);
 }
 
 /*
@@ -486,7 +558,7 @@ static int s_flush(synth_t *s)
 {
   int result;
 
-  if (text_tail == 0 && wave_tail == 0) return 0;
+  if (text_tail == 0 && ac_tail == 0) return 0;
   text_synthpos = text_tail;
   if (!wave_thread_active)
   {
@@ -513,7 +585,7 @@ static int s_clear(synth_t *s)
 {
   int i;
 
-  es_log(2, "s_clear: text=%d %d, wave=%d %d", text_head, text_tail, wave_head, wave_tail);
+  es_log(2, "s_clear: text=%d %d, wave=%d %d", text_head, text_tail, ac_head, ac_tail);
   es_log(2, "s_clear: locking wave mutex");
   pthread_mutex_lock(&wave_mutex);
   es_log(2, "s_clear: got wave mutex");
@@ -524,7 +596,7 @@ static int s_clear(synth_t *s)
   }
   if (wave_thread_active)
   {
-    es_log(2, "canceling wave thread: %d %d", wave_head, wave_tail);
+    es_log(2, "canceling wave thread: %d %d", ac_head, ac_tail);
     pthread_cancel(wave_thread);
   }
   pthread_mutex_unlock(&wave_mutex);
@@ -541,23 +613,16 @@ static int s_clear(synth_t *s)
     usleep(5000);
   }
   /* Free any wave data */
-//es_log("s_clear: freeing wave data: %d", wave_tail);
-  for (i = 0; i < wave_tail; i++)
+//es_log("s_clear: freeing wave data: %d", ac_tail);
+  for (i = 0; i < ac_tail; i++)
   {
-    if (waves[i])
-    {
-      if (waves[i]->samples)
-      {
-	es_log(2, "s_clear: freeing samples: %8lx", (long)waves[i]->samples);
-	cst_free(waves[i]->samples);
-      }
-      cst_free(waves[i]);
-      waves[i] = NULL;
-    }
+    if (ac[i].type != NONE) ac_destroy(&ac[i]);
   }
+#if 0
   //es_log(2, "mem=%d", cst_alloc_out);
+#endif
   text_head = text_tail = text_synthpos = 0;
-  wave_head = wave_tail = wave_synthpos = 0;
+  ac_head = ac_tail = ac_synthpos = 0;
   text_thread_active = wave_thread_active = 0;
   pas = 0;
   time_left = 0;

@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.8 2002/04/15 00:44:06 mgorse Exp $
+ * $Id: es.c,v 1.9 2002/05/01 03:59:13 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -591,7 +591,7 @@ es_log(1, "silent");
     /* tbc - For the FLite server, we could use the FLite audio library for
        this, but that would introduce a dependency on FLite. */
     /* tbd - allow user to set volume */
-    do_tone(freq, dur, tone_volume, tone_flags);
+    do_tone(lang->synth, freq, dur, tone_volume, tone_flags);
   }
 }
 
@@ -675,6 +675,7 @@ void passthrough(char *infile, int outfd)
   int size;
   int fd;
 
+  signal(SIGCHLD, finish);
   es_log(1, "es: reading input from %s", infile);
   fd = open(infile, O_RDONLY);
   if (fd == -1) terror("open");
@@ -699,7 +700,7 @@ void passthrough(char *infile, int outfd)
       exit(0);
     }
     if (buf[0] == 3) break;
-    write(outfd, buf, size);
+    if (write(outfd, buf, size) != size) terror("write");
   }
   exit(0);
 }
@@ -763,7 +764,6 @@ int main (int argc, char *argv[])
   tone_volume = lookup_int("tone_volume", 8192);
   if (lookup_int("speaker_tones", 1) == 0) tone_flags &= 0xfe;
   if (lookup_int("soundcard_tones", 1) == 0) tone_flags &= 0xfd;
-
 
   unlink(sockname);
   sock = sockopen(sockname);

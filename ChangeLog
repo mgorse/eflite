@@ -1,3 +1,8 @@
+05/02/02:
+- fs.c: modified synthesize(), play(), and s_synth() so that items sent to threads may have multiple "types" (currently SPEECH and TONE are defined)
+- fs.c: Only enable segfault handler if DEBUG is defined, since it causes runaway eflite processes when the daemon crashes
+- configure.in, Makefile.in: add check for FLite under the user's home directory, check for -lsocket (for Solaris)
+
 04/30/02:
 - tone.c: Add code to use FLite code for audio if EFLITE is defined (so that Solaris can be supported)
 - Add support for tone_volume, speaker_tones, and soundcard_tones configuration settings

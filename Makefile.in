@@ -7,6 +7,7 @@ CC       = @CC@
 CFLAGS   = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 DEFS     = @DEFS@
+LIBS = @LIBS@
 
 AUDIOLIBS   = @AUDIOLIBS@
 
@@ -28,10 +29,10 @@ flite_dir:=@flite_dir@
 FLITE_LIBS:=$(flite_dir)/lib/libflite_$(FL_VOX).a $(flite_dir)/lib/libflite_$(FL_LEX).a $(flite_dir)/lib/libflite_$(FL_LANG).a $(flite_dir)/lib/libflite.a
 
 eflite: fs.o es.o soccon.o sockopen.o tone.o $(FLITE_LIBS)
-	$(CC) $(LDFLAGS) -o $@ $^ -lpthread -lm
+	$(CC) $(LDFLAGS) -o $@ $^ -lpthread -lm $(LIBS)
 
 fs.o: fs.c
-	$(CC) $(CFLAGS) -I. -I$(flite_dir)/include -DREGISTER_VOX=register_$(FL_VOX) -DSTANDALONE -c -o $@ $<
+	$(CC) $(CFLAGS) -I. -I$(flite_dir)/include -DREGISTER_VOX=register_$(FL_VOX) -DSTANDALONE -DEFLITE -c -o $@ $<
 
 tone.o: tone.c
 	$(CC) $(CFLAGS) -I$(flite_dir)/include -DEFLITE -c -o $@ $<

@@ -8,6 +8,8 @@ if test "x$GCC" = "xyes"; then
 	CFLAGS="$CFLAGS -Wall"
 fi
 
+AC_CHECK_LIB(socket,connect)
+
 AC_ARG_VAR(flite_dir, Prefix for Festival Lite files)
 
 dnl If flite_dir was not specified, then try to guess a value
@@ -22,6 +24,8 @@ if test "x$flite_dir" = x; then
     flite_dir=/usr/local
   elif test -f /opt/flite/lib/libflite.a; then
     flite_dir=/opt
+  elif test -f $HOME/flite-1.1-release/lib/libflite.a; then
+    flite_dir=$HOME/flite-1.1-release
   else
     AC_MSG_ERROR(Cannot locate libflite.a.  Please specify flite_dir explicitly (see INSTALL).  If you do not have FLite headers and libraries available, then compile FLite and re-run configure.)
     fi
@@ -53,5 +57,6 @@ if test "x$with_lex" = "x"; then
         FL_LEX="cmulex"
 fi
 AC_SUBST(FL_LEX)
+AC_SUBST(LIBS)
 
 AC_OUTPUT(Makefile)
