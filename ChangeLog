@@ -1,4 +1,5 @@
 05/20/02:
+- Release v0.3.1
 - play:: Use ac[AC_HEAD} rather than ac[0] when opening sound card (fixes crash)
 
 05/17/02:
