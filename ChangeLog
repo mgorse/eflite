@@ -1,4 +1,8 @@
-02/013/02:
+03/25/03:
+configure.in, Makefile.in: add flite_include_dir (thanks to Mario Lang)
+- Release v0.3.6
+
+02/13/03:
 Makefile.in: substitute cmu_us_kal for cmu_us_kal16 when passing REGISTER_VOX
 
 02/01/03:
