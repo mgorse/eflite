@@ -1,3 +1,6 @@
+12/07/02:
+- Release v0.3.4
+
 10/10/02:
 es.c: Avoid dereferencing lang in finish() if it is NULL, thanks to Richard
 	Bilson
