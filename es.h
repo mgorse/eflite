@@ -7,7 +7,7 @@ struct client
 {
   int fd;
   int param[NPARAMS];
-  char punct[128];
+  char punct[256];
 };
 
 typedef struct setting setting;
