@@ -30,7 +30,7 @@ flite_include_dir:=@flite_include_dir@
 FLITE_LIBS:=$(flite_dir)/lib/libflite_$(FL_VOX).a $(flite_dir)/lib/libflite_$(FL_LEX).a $(flite_dir)/lib/libflite_$(FL_LANG).a $(flite_dir)/lib/libflite.a
 
 eflite: fs.o es.o soccon.o sockopen.o tone.o $(FLITE_LIBS)
-	$(CC) $(LDFLAGS) -o $@ $^ -lpthread -lm $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ -lm $(LIBS)
 
 fs.o: fs.c
 	$(CC) $(CFLAGS) -I. -I$(flite_include_dir) -DREGISTER_VOX=register_$(subst cmu_us_kal16,cmu_us_kal,$(FL_VOX)) -DSTANDALONE -DEFLITE -c -o $@ $<

@@ -9,6 +9,7 @@ if test "x$GCC" = "xyes"; then
 fi
 
 AC_CHECK_LIB(socket,connect)
+AC_SEARCH_LIBS(pthread_create,pthread lpthread)
 
 AC_ARG_VAR(flite_dir, Prefix for Festival Lite files)
 
