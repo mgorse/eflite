@@ -49,18 +49,9 @@ when the punctuation mode is set to "all."  Default is
 !@#$%^&*()-=_+[]\|{};':",./<>?
 
 === 4. Testing EFlite ===
-Once you have compiled and configured EFlite, you may want to test it
-to ensure that all is well.  One way to do this would be to run it and
-type in the following commands once the program starts:
-q {This is a test}
-d
-
-The first line tells the server to put the test "This is a test" in its
-queue, and the second line tells it to speak the text in the queue, so
-it should read, "This is a test."  If something is wrong, then you will
-hopefully get a reasonably descriptive error message explaining what went
-wrong, although I wouldn't bet my life on it.  If you do have problems,
-then let me know.
+Once you have compiled EFlite, I would suggest running "make test".  This
+will run EFlite, passing it a test file as input.  You should hear a message
+being spoken.
 
 === 5. Configuring your screen reader ===
 [I will discuss Emacspeak and Yasr in this section.  If anyone gets

@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.1.1.1 2002/03/03 19:49:48 mgorse Exp $
+ * $Id: fs.c,v 1.2 2002/03/06 02:25:18 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -145,7 +145,7 @@ void segfault(int sig)
 {
   es_log("Got a seg fault -- exiting");
   printf("Got a seg fault -- exiting.\n");
-  exit(11);
+  _exit(11);
 }
 
 synth_t *synth_open(void *context, lookup_string_t lookup)
@@ -212,6 +212,8 @@ static int s_close(synth_t *s)
 {
     ref_count--;
     if (ref_count == 0) {
+	/* Wait for any speech to be spoken */
+	while (text_thread_active || wave_thread_active) usleep(50000);
 	if (text) free(text);
 	if (waves) free(waves);
 	text = NULL;

@@ -1,0 +1,2 @@
+q {This is a test of EFlite.  If you can hear this, then it is able to make sound and should be functioning correctly.}
+d

@@ -1,3 +1,9 @@
+03/25/02:
+- Add eflite_test.txt test file, add and document "Make test"
+- Have s_close wait for text to be spoken before exiting
+- Use _exit instead of exit for seg fault handler to avoid recursion
+- Call s_close function when exiting due to all clients dying
+
 03/05/02:
 - Release v0.2.1
 - Add vol parameter to dsp_tone(), lower volume of generated dsp tones
