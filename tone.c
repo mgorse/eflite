@@ -1,5 +1,5 @@
 /* tone.c - code for generating tones
- * $Id: tone.c,v 1.3 2002/05/01 03:59:13 mgorse Exp $
+ * $Id: tone.c,v 1.4 2002/05/03 01:17:58 mgorse Exp $
  */
 
 #include <errno.h>
@@ -57,7 +57,7 @@ cst_wave *generate_tone(int freq, int dur, int vol)
   }
   wptr->num_channels = 1;
   wptr->sample_rate = 8000;
-  for (i = 0,n = 0; n < max; n += step,i++)
+  for (i = 0,n = 0; i < wptr->num_samples; n += step,i++)
   {
     wptr->samples[i] = sin(n) * vol;
   }
