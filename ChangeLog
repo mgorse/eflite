@@ -1,3 +1,6 @@
+05/21/02:
+- fs.c: Set ac_synthpos to 0xffff before creating text thread; causes play to set pas if becoming active before synthesize thread
+
 05/20/02:
 - Release v0.3.1
 - play:: Use ac[AC_HEAD} rather than ac[0] when opening sound card (fixes crash)

@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.8 2002/05/17 02:07:02 mgorse Exp $
+ * $Id: fs.c,v 1.9 2002/05/20 12:51:02 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -426,7 +426,6 @@ static void * synthesize(void *initializer)
   free(initializer);
   if (s_count != s_count_enter) return NULL;
   es_log(2, "synthesize: entering");
-  ac_synthpos = 0xffff;
   while (text[text_head])
   {
     es_log(2, "synthesize: %d %d", text_head, text_tail);
@@ -560,6 +559,7 @@ static void add_command(struct synth_struct *s, int id, unsigned char *buffer)
     pthread_mutex_init(&text_mutex, NULL);
     es_log(2, "s_synth: creating new text thread");
     text_thread_active = 1;
+    ac_synthpos = 0xffff;
     pthread_create(&text_thread, &ta, synthesize, make_initializer(s, s_count));
   }
   else pthread_mutex_unlock(&text_mutex);
