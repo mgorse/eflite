@@ -51,5 +51,5 @@ endif
 install: eflite
 	install -c -m 0755 $< $(exec_prefix)/bin
 
-test:
+test: eflite
 	./eflite -f eflite_test.txt

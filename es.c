@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.5 2002/03/06 02:25:18 mgorse Exp $
+ * $Id: es.c,v 1.6 2002/03/26 00:11:01 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -295,10 +295,10 @@ void finish(int sig)
 {
   int i;
 
-  lang->synth->close(lang->synth);
   for (i = 0; i < numclients; i++) close(client[i].fd);
   close(sock);
   unlink(sockname);
+  lang->synth->close(lang->synth);
   exit(0);
 }
 
@@ -753,7 +753,7 @@ int main (int argc, char *argv[])
   }
   /* The following line doesn't seem to work.  Why not? */
   fchmod(sock, 0666);
-  fprintf(stderr, "Socket initialized\n");
+  es_log("Socket initialized\n");
   signal(SIGINT, finish);
   signal(SIGTERM, finish);
   //signal (SIGHUP, SIG_IGN);
@@ -780,10 +780,9 @@ int main (int argc, char *argv[])
     {
       if (numclients == maxclients)
       {
-fprintf(stderr, "Allocating more memory\n");
 	client = realloc(client, ++maxclients * sizeof(CLIENT));
       }
-fprintf(stderr, "Accepting connection\n");
+es_log("Accepting connection\n");
       client[numclients++].fd = accept(sock, 0, 0);
       client_init(&client[i]);
       continue;
@@ -794,7 +793,7 @@ fprintf(stderr, "Accepting connection\n");
       {
 	if (handle(&client[i]))
 	{
-fprintf(stderr, "Deactivating a client\n");
+es_log("Deactivating a client\n");
 	  /* Deactivate client */
 	  close(client[i].fd);
 	  memcpy(client + i, client + i + 1, sizeof(CLIENT) * (--numclients - i));
