@@ -1,3 +1,16 @@
+01/20/05:
+Corrected INSTALL documentation for Emacspeak 19 and up
+From Jeremy Huddleston <jeremy@outersquare.org>:
+es.c: fix EOF bug
+es.c: add -D (daemon) option
+Support shared libraries
+Release v0.3.9
+
+02/20/04:
+es.c: add --version
+fs.c: fix size warning
+Release v0.3.8
+
 10/28/03:
 fs.c: clean up handling of wave mutex; fixes new deadlock for me
 
