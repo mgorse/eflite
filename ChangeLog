@@ -1,3 +1,11 @@
+05/20/02:
+- play:: Use ac[AC_HEAD} rather than ac[0] when opening sound card (fixes crash)
+
+05/17/02:
+es.c: Check for eof when trying to complete a string
+- fs.c: kludgy fix for race condition in which speech is started, stopped, and started again, and two synthesize threads would exist
+- play: check ac[ac_head] rather than ac[0] when checking for samples to play
+
 05/16/02:
 - synthesize: return when an unknown command is encountered, to avoid crashing
 

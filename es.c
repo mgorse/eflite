@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.9 2002/05/01 03:59:13 mgorse Exp $
+ * $Id: es.c,v 1.10 2002/05/03 01:17:58 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -614,6 +614,7 @@ int handle(CLIENT *client)
   int size;
   char *p;
   int in_braces = 0;
+  int result;
 
   size = read(client->fd, buf, bufsize - 1);
   if (!size) return 1;
@@ -625,7 +626,13 @@ int handle(CLIENT *client)
     bufsize += 200;
     buf = realloc (buf, bufsize);
     if (!buf) exit(1);
-    size += read(client->fd, buf + size, 200);
+    result = read(client->fd, buf + size, 200);
+    if (result <= 0)
+    {
+      buf[size] = '\0';
+      break;
+    }
+    size += result;
     buf[size] = 0;
     }
 es_log(1, "handle: %s", buf);

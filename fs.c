@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.7 2002/05/03 01:17:58 mgorse Exp $
+ * $Id: fs.c,v 1.8 2002/05/17 02:07:02 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -175,7 +175,7 @@ synth_t *synth_open(void *context, lookup_string_t lookup)
       unlink("log");
 
 #ifdef DEBUG
-      signal(SIGSEGV, segfault);
+      //signal(SIGSEGV, segfault);
 #endif
       flite_init();
       v = REGISTER_VOX(NULL);
@@ -301,13 +301,13 @@ static void * play(void *s)
   for (;!audiodev;)
   {
     pthread_mutex_lock(&wave_mutex);
-    if (!ac[0].type != NONE)
+    if (ac[ac_head].type == NONE)
     {
       pthread_mutex_unlock(&wave_mutex);
       pas = (ac_synthpos > 0? 1: 0);
       return NULL;
     }
-    wptr = ac[0].data;
+    wptr = ac[ac_head].data;
     /* N.b. Following assumes that all samples have the same format */
     audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
     pthread_mutex_unlock(&wave_mutex);
@@ -388,14 +388,43 @@ audio_write(audiodev, wptr->samples + skip, playlen * 2);
   return NULL;
 }
 
-static void * synthesize(void *s)
+/* This kludge works around the race condition where a synthesize thread is
+   started, then speech is silenced, then more speech is added, with the first
+   thread never having been created.  We want to avoid having two synthesize
+   threads running in this situation.  A better solution would be to use
+   thread conditions, but I have been unable to get them to work so far.  If
+   you can help, then send me an email. */
+typedef struct
+{
+  struct synth_t *s;
+  int s_count;
+} SYNTHESIZE_INITIALIZER;
+
+void *make_initializer(void *s, int s_count)
+{
+  SYNTHESIZE_INITIALIZER *ptr;
+
+  ptr = (SYNTHESIZE_INITIALIZER *)malloc(sizeof(SYNTHESIZE_INITIALIZER));
+  if (!ptr) return NULL;
+  ptr->s = s;
+  ptr->s_count = s_count;
+  return ptr;
+}
+
+static void * synthesize(void *initializer)
 {
   cst_wave *wptr = NULL;
   int wml = 0;	/* wave mutex locked */
-  int s_count_enter = s_count;
+  struct synth_t *s;
+  int s_count_enter;
   int command;
+  int just_entered = 1;
 
-  if (!text_tail) return NULL;
+  if (!initializer) return NULL;
+  s = ((SYNTHESIZE_INITIALIZER *)initializer)->s;
+  s_count_enter = ((SYNTHESIZE_INITIALIZER *)initializer)->s_count;
+  free(initializer);
+  if (s_count != s_count_enter) return NULL;
   es_log(2, "synthesize: entering");
   ac_synthpos = 0xffff;
   while (text[text_head])
@@ -422,11 +451,12 @@ static void * synthesize(void *s)
       es_log(1, "synthesize: internal error: unknown command: %x", text[text_head - 1]);
       return NULL;
     }
-    if (time_left > 3)
+    if (time_left > 3 && !just_entered)
     {
       es_log(1, "time_left=%f -- going to sleep\n", time_left);
       usleep(time_left * 750000);
     }
+    just_entered = 0;
     if (s_count != s_count_enter)
     {
       es_log(2, "synthesize: canceling");
@@ -477,7 +507,7 @@ static void * synthesize(void *s)
     }
     if (pas)
     {
-      es_log(2, "pas set, creating play thread");
+      es_log(2, "synthesize: pas set, creating play thread");
       es_log(2, "synthesize: locking wave mutex");
       pthread_mutex_lock(&wave_mutex);
       es_log(2, "synthesize: got wave mutex");
@@ -530,7 +560,7 @@ static void add_command(struct synth_struct *s, int id, unsigned char *buffer)
     pthread_mutex_init(&text_mutex, NULL);
     es_log(2, "s_synth: creating new text thread");
     text_thread_active = 1;
-    pthread_create(&text_thread, &ta, synthesize, s);
+    pthread_create(&text_thread, &ta, synthesize, make_initializer(s, s_count));
   }
   else pthread_mutex_unlock(&text_mutex);
   return;
