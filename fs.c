@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.12 2002/10/11 01:42:03 mgorse Exp $
+ * $Id: fs.c,v 1.13 2003/02/01 18:42:30 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -290,6 +290,24 @@ static void close_audiodev()
   }
 }
 
+static void play_unlock(void *canceled)
+{
+  es_log(2, "play: unlocking wave mutex");
+  pthread_mutex_unlock(&wave_mutex);
+  es_log(2, "play: unlocked wave mutex");
+}
+
+#define PLAY_UNLOCK \
+  play_unlock(NULL); \
+  pthread_cleanup_pop(0);
+
+#define PLAY_LOCK \
+  es_log(2, "play: locking wave mutex"); \
+  pthread_cleanup_push(play_unlock, NULL); \
+  pthread_mutex_lock(&wave_mutex); \
+  es_log(2, "play: got wave mutex"); \
+  pthread_testcancel();
+
 static void * play(void *s)
 {
   int playlen;
@@ -297,22 +315,21 @@ static void * play(void *s)
   cst_wave *wptr;
   int *sparam = ((synth_t *)s)->state->param;
 
-  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-  es_log(2, "play: init: ac-head=%d ac_tail=%d", ac_head, ac_tail);
+  //pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+  es_log(2, "play: init: ac_head=%d ac_tail=%d", ac_head, ac_tail);
   while (ac_head < ac_synthpos)
   {
     for (;!audiodev;)
     {
-      pthread_mutex_lock(&wave_mutex);
+      PLAY_LOCK;
       if (ac[ac_head].type == NONE)
       {
-	pthread_mutex_unlock(&wave_mutex);
 	pas = (ac_synthpos > 0? 1: 0);
-	return NULL;
+	pthread_exit(NULL);
       }
       wptr = ac[ac_head].data;
       audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
-      pthread_mutex_unlock(&wave_mutex);
+      PLAY_UNLOCK;
       if (!audiodev || (int)audiodev->platform_data == -1)
       {
 	if (errno == EBUSY)
@@ -320,6 +337,7 @@ static void * play(void *s)
 	  es_log(2, "Audio device is busy; trying again");
 	  close_audiodev();
 	  usleep(20000);
+	  pthread_testcancel();
 	  continue;
 	}
       terror("audio_open");
@@ -331,12 +349,9 @@ static void * play(void *s)
       /* There will be more data, but it isn't ready yet. */
       es_log(2, "ac[%d] is inactive, setting pas", ac_head);
       pas = 1;
-      es_log(2, "play: locking wave mutex");
-      pthread_mutex_lock(&wave_mutex);
-      es_log(2, "play: got wave mutex");
+      PLAY_LOCK;
       close_audiodev();
-      pthread_mutex_unlock(&wave_mutex);
-      es_log(2, "play: unlocked wave mutex");
+      PLAY_UNLOCK;
       return NULL;
     }
     wptr = ac[ac_head].data;
@@ -358,12 +373,15 @@ static void * play(void *s)
     {
       if (sparam[S_VOLUME] != 1000)
 	cst_wave_rescale(wptr, (sparam[S_VOLUME] << 16) / 1000);
+      pthread_testcancel();
       audio_write(audiodev, wptr->samples + skip, playlen * 2);
+      pthread_testcancel();
     }
     es_log(2, "play: syncing");
     audio_flush(audiodev);
+    pthread_testcancel();
     time_left -= (float)playlen / wptr->sample_rate;
-    pthread_mutex_lock(&wave_mutex);
+    PLAY_LOCK;
     ac_destroy(&ac[ac_head]);
     close_audiodev();
     if (++ac_head > (ac_size >> 1))
@@ -374,18 +392,17 @@ static void * play(void *s)
       ac_synthpos -= ac_head;
       ac_head = 0;
     }
-    pthread_mutex_unlock(&wave_mutex);
-    es_log(2, "play: unlocked wave mutex");
+    PLAY_UNLOCK;
   }
-  es_log(2, "play: loop over: %d %d", ac_head, ac_tail);
-  pthread_mutex_lock(&wave_mutex);
+  es_log(2, "play: loop over: ac_head=%d, ac_tail=%d", ac_head, ac_tail);
+  PLAY_LOCK;
   if (ac_head == ac_tail)
   {
     ac_head = ac_tail = wave_thread_active = 0;
   }
   else pas = 1;	/* there is more data -- need to re-enter */
-  pthread_mutex_unlock(&wave_mutex);
-  es_log(2, "play: unlocked wave mutex and exiting");
+  PLAY_UNLOCK;
+  es_log(2, "play: exiting");
   return NULL;
 }
 
@@ -501,6 +518,7 @@ static void * synthesize(void *initializer)
     es_log(2, "synthesize: after adding: %d %d", ac_head, ac_tail);
     if (wml)
     {
+      es_log(2, "synthesize: unlocking wave mutex");
       pthread_mutex_unlock(&wave_mutex);
       es_log(2, "synthesize: unlocked wave mutex");
       wml = 0;
@@ -633,12 +651,6 @@ static int s_clear(synth_t *s)
     pthread_cancel(wave_thread);
   }
   pthread_mutex_unlock(&wave_mutex);
-  /* Next two lines ensure that the mutex is in an initialized state.  It
-     seems that canceling a thread that is waiting on a mutex can cause
-     deadlock. */
-  pthread_mutex_destroy(&wave_mutex);
-  pthread_mutex_init(&wave_mutex, NULL);
-  es_log(2, "s_clear: unlocked wave mutex");
   if (audiodev)
   {
     audio_drain(audiodev);

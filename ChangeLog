@@ -1,3 +1,6 @@
+10/28/03:
+fs.c: clean up handling of wave mutex; fixes new deadlock for me
+
 07/16/03:
 Makefile.in: make directory before installing
 
