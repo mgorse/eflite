@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.9 2002/05/20 12:51:02 mgorse Exp $
+ * $Id: fs.c,v 1.10 2002/05/21 19:17:48 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -175,7 +175,7 @@ synth_t *synth_open(void *context, lookup_string_t lookup)
       unlink("log");
 
 #ifdef DEBUG
-      //signal(SIGSEGV, segfault);
+      signal(SIGSEGV, segfault);
 #endif
       flite_init();
       v = REGISTER_VOX(NULL);
