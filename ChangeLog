@@ -1,3 +1,7 @@
+04/13/02:
+- (hopefully) fixed bug which could cause text not to be spoken when several
+  sounds are queued
+
 03/26/02:
 - Call es_log for notification messages formerly printed to stderr
 - Add eflite as a dependency to "make test"

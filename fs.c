@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.2 2002/03/06 02:25:18 mgorse Exp $
+ * $Id: fs.c,v 1.3 2002/03/26 00:11:01 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -342,8 +342,12 @@ audio_write(audiodev, waves[wave_head]->samples + (1500000 / ((synth_t *)s)->sta
   }
 //es_log("play: loop over: %d %d", wave_head, wave_tail);
   pthread_mutex_lock(&wave_mutex);
-  wave_head = wave_tail = wave_thread_active = 0;
-  close_audiodev();
+  if (wave_head == wave_tail)
+  {
+    wave_head = wave_tail = wave_thread_active = 0;
+    close_audiodev();
+  }
+  else pas = 1;	/* there is more data -- need to re-enter */
   pthread_mutex_unlock(&wave_mutex);
 //es_log("play: unlocked wave mutex and exiting");
   return NULL;
