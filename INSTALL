@@ -11,7 +11,10 @@ Note that Eflite does not use the generated "flite" binary but instead
 links against the libraries.
 
 === 2. Compiling EFlite ===
-First, run configure.  This will create a Makefile.  It will try to guess at
+If you have checked EFlite out from cvs, then you will first need to generate
+the configure script from the configure.in file.  Do this by running autoconf.
+If you downloaded the source from the web, then you can skip this step.
+Then, run configure.  This will create a Makefile.  It will try to guess at
 the location of your FLite libraries.  If it guesses incorrectly or does not
 succeed at finding them, then you will need to specify the directory with a
 command similar to the following:
