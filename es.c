@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.15 2002/10/11 02:10:14 mgorse Exp $
+ * $Id: es.c,v 1.16 2002/12/23 02:21:48 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -392,7 +392,7 @@ void es_addtext(CLIENT *client, char *buf)
   int i;
   int val;
   char obuf[1024];
-  char *p, *q;
+  unsigned char *p, *q;
 
   for (i = 0; i < NPARAMS; i++)
   {
@@ -403,19 +403,19 @@ void es_addtext(CLIENT *client, char *buf)
       lang->synth->set_param(lang->synth, i, client->param[i]);
     }
   }
-  q = obuf;
-  for (p = buf; *p; p++)
+  q = (unsigned char *)obuf;
+  for (p = (unsigned char *)buf; *p; p++)
   {
-    if (q - obuf > 896)
+    if (q - (unsigned char *)obuf > 896)
     {
       *q = 0;
       lang->synth->synth(lang->synth, obuf);
       q = obuf;
     }
-    if (*p < 0 || !client->punct[(int)*p]) *q++ = *p;
+    if (!client->punct[(int)*p]) *q++ = *p;
     else
     {
-      if (q > obuf && q[-1] != ' ') *q++ = ' ';
+      if (q > (unsigned char *)obuf && q[-1] != ' ') *q++ = ' ';
       strcpy(q, ascii[(int)*p]);
       while (*q) q++;
       *q++ = ' ';
@@ -460,12 +460,13 @@ void client_init(CLIENT *client)
   memset(client->punct, 0, sizeof(client->punct));
 }
 
-static int punct_add(CLIENT *client, char *str)
+static int punct_add(CLIENT *client, const char *str)
 {
-  for (;*str;str++)
+  unsigned char *p;
+
+  for (p = (unsigned char *)str;*p;p++)
   {
-    if (*str < 0) return -1;
-    client->punct[(int)*str] = 1;
+    client->punct[(int)*p] = 1;
   }
   return 0;
 }
