@@ -23,6 +23,12 @@ There may be legal issues that would arise if fs.c were linked against
 libspeech.a from BRASS, since BRASS is GPLed whereas FLite is not,
 but I am not sure one way or the other.
 
+Eflite takes the following options:
+-D: Run as a daemon and exit; do not read from stdin
+-d: enable debugging message
+-fi <filename>: read input from <filename>
+-v: print version and exit
+
 Send flames, bug reports, etc. to mgorse@alum.wpi.edu.  You can also
 catch me on #blinux on openprojects, as "vortex"
 
