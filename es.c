@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.19 2003/05/25 23:33:48 mgorse Exp $
+ * $Id: es.c,v 1.20 2004/02/20 23:47:27 mgorse Exp $
  */
 
 #define _GNU_SOURCE
@@ -711,7 +711,15 @@ void passthrough(char *infile, int outfd)
   while (1)
   {
     size = read(fd, buf, sizeof(buf));
-    if (size == -1) terror("read");
+    if (size == -1)
+    {
+      if (errno == EBADF)
+      {
+	/* this might really be an eof */
+	exit(0);
+      }
+      else terror("read");
+    }
     if (size == 0)
     {
       int is_fifo;
@@ -760,9 +768,13 @@ int main (int argc, char *argv[])
   char *input = NULL;
   int more_opts = 1;
   int debug = 0;
+  int daemon_only = 0;
 
-  while (more_opts) switch(getopt_long(argc, argv, "df:v", (struct option *)&longopts, NULL))
+  while (more_opts) switch(getopt_long(argc, argv, "Ddf:v", (struct option *)&longopts, NULL))
   {
+  case 'D':
+    daemon_only = 1;
+    break;
   case 'd':
     debug = 1;
     break;
@@ -770,7 +782,7 @@ int main (int argc, char *argv[])
     input = optarg;
     break;
   case 'v':
-    printf("Eflite 0.3.8\n");
+    printf("Eflite 0.3.8.1\n");
     exit(0);
   default: more_opts = 0;
   }
@@ -783,19 +795,32 @@ int main (int argc, char *argv[])
   sockname = lookup_string(NULL, "socketfile");
   if (!sockname) sockname = "/tmp/es.socket";
   local_fd = sockconnect(sockname);
-  if (local_fd != -1) passthrough(infile, local_fd);
-  if (!debug && (child = fork()))
+
+  if(daemon_only)
   {
-    usleep(200000);
-    local_fd = sockconnect(sockname);
-    if (local_fd == -1)
+    if(local_fd != -1)
     {
-      es_log(1 | LOG_STDERR, "Daemon not accepting connections -- exiting\n");
+      es_log(1 | LOG_STDERR, "Socket already exists.  Exiting.\n");
       exit(1);
     }
-    passthrough(infile, local_fd);
-    exit(0);
   }
+  else
+  {
+    if (local_fd != -1) passthrough(infile, local_fd);
+    if (!debug && (child = fork()))
+    {
+      usleep(200000);
+      local_fd = sockconnect(sockname);
+      if (local_fd == -1)
+      {
+        es_log(1 | LOG_STDERR, "Daemon not accepting connections -- exiting\n");
+        exit(1);
+      }
+      passthrough(infile, local_fd);
+      exit(0);
+    }
+  }
+
   punct_some = lookup_string(NULL, "punct_some");
   if (punct_some == NULL) punct_some = "@#$%^&_[]{}\\|";
   punct_all = lookup_string(NULL, "punct_all");
