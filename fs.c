@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.13 2003/02/01 18:42:30 mgorse Exp $
+ * $Id: fs.c,v 1.14 2003/10/29 04:37:20 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -330,7 +330,7 @@ static void * play(void *s)
       wptr = ac[ac_head].data;
       audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
       PLAY_UNLOCK;
-      if (!audiodev || (int)audiodev->platform_data == -1)
+      if (!audiodev || (long)audiodev->platform_data == -1)
       {
 	if (errno == EBUSY)
 	{
