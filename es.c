@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.20 2004/02/20 23:47:27 mgorse Exp $
+ * $Id: es.c,v 1.21 2005/01/21 00:16:03 mgorse Exp $
  */
 
 #define _GNU_SOURCE
@@ -782,7 +782,7 @@ int main (int argc, char *argv[])
     input = optarg;
     break;
   case 'v':
-    printf("Eflite 0.3.8.1\n");
+    printf("Eflite 0.3.9\n");
     exit(0);
   default: more_opts = 0;
   }
