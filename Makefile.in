@@ -27,10 +27,10 @@ flite_include_dir:=@flite_include_dir@
 #CFLAGS+= -DDEBUG=2
 
 # For making releases
-FLITE_LIBS:=$(flite_dir)/lib/libflite_$(FL_VOX).a $(flite_dir)/lib/libflite_$(FL_LEX).a $(flite_dir)/lib/libflite_$(FL_LANG).a $(flite_dir)/lib/libflite.a
+FLITE_LIBS:=-L$(flite_dir)/lib -lflite_$(FL_VOX) -lflite_$(FL_LEX) -lflite_$(FL_LANG) -lflite
 
-eflite: fs.o es.o soccon.o sockopen.o tone.o $(FLITE_LIBS)
-	$(CC) $(LDFLAGS) -o $@ $^ -lm $(LIBS)
+eflite: fs.o es.o soccon.o sockopen.o tone.o
+	$(CC) $(LDFLAGS) -o $@ $^ -lm $(LIBS) $(FLITE_LIBS)
 
 fs.o: fs.c
 	$(CC) $(CFLAGS) -I. -I$(flite_include_dir) -DREGISTER_VOX=register_$(subst cmu_us_kal16,cmu_us_kal,$(FL_VOX)) -DSTANDALONE -DEFLITE -c -o $@ $<
