@@ -39,7 +39,7 @@ tone.o: tone.c
 
 DISTFILES=es.c fs.c soccon.c sockopen.c tone.c es.h language.h lookup.h synthesizer.h configure configure.in Makefile.in COPYING ChangeLog INSTALL README eflite_test.txt
 release:
-	mkdir ../eflite-$(EFLITE_VERSION) && cp $(DISTFILES) ../eflite-$(EFLITE_VERSION) && tar -C.. -czf eflite-$(EFLITE_VERSION).tar.gz $(addprefix eflite-$(EFLITE_VERSION)/,$(DISTFILES)) && rm -r ../eflite-$(EFLITE_VERSION)
+	mkdir ../eflite-$(EFLITE_VERSION) && cp $(DISTFILES) ../eflite-$(EFLITE_VERSION) && tar --owner root --group root -C.. -czf eflite-$(EFLITE_VERSION).tar.gz $(addprefix eflite-$(EFLITE_VERSION)/,$(DISTFILES)) && rm -r ../eflite-$(EFLITE_VERSION)
 
 DIRFILES:=$(filter-out $(DISTFILES),$(wildcard *))
 pristine:

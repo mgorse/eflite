@@ -1,3 +1,6 @@
+06/03/02:
+- Makefile.in: set --owner root and --group root for make release
+
 05/31/02:
 - parse(): bypass all spaces before tokenizing input line
 
