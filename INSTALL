@@ -75,10 +75,10 @@ Eflite to work with BRASS or anything else and would like to contribute
 a section for it, then send me some email.]
 
 === 5.1. Emacspeak:
-- Set DTK_TCL to the location of your EFlite binary.  If you use
+- Set DTK_PROGRAM to the location of your EFlite binary.  If you use
 /usr/bin/emacspeak, then it may be easiest to place  a line similar to the
 following into emacspeak.conf:
-export DTK_TCL=/usr/local/bin/eflite
+export DTK_PROGRAM=/usr/local/bin/eflite
 
 Alternatively, the following shell script should get Emacspeak running with
 EFlite, although you may need to edit some path names:
@@ -86,7 +86,7 @@ EFlite, although you may need to edit some path names:
 #!/bin/sh
 
 export EMACS_UNIBYTE=1
-export DTK_TCL=/usr/local/bin/eflite
+export DTK_PROGRAM=/usr/local/bin/eflite
 emacs -q -l /usr/share/emacs/site-lisp/emacspeak/lisp/emacspeak-setup.el
 # You may want to add "-l $HOME/.emacs" to the previous line
 
