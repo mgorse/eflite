@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.2 2002/03/04 01:36:49 mgorse Exp $
+ * $Id: es.c,v 1.3 2002/03/04 15:05:44 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -630,7 +630,7 @@ es_log("handle: %s", buf);
 	  }
 	}
       }
-      buf[i] = 0;
+      buf[i] = in_braces = 0;
       if (i > j)
       {
 	parse(client, p);
