@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.10 2002/05/03 01:17:58 mgorse Exp $
+ * $Id: es.c,v 1.11 2002/05/20 12:51:02 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -427,7 +427,7 @@ void es_addtext(CLIENT *client, char *buf)
 }
 
 #ifdef DEBUG
-void es_log(int debuglevel, const char *text, ...)
+void es_log(int flags, const char *text, ...)
 {
 #ifdef DEBUG
   char buf[200];
@@ -435,7 +435,7 @@ void es_log(int debuglevel, const char *text, ...)
   FILE *fp;
   char logname[200];
 
-  if (debuglevel > DEBUG) return;
+  if ((flags & 0xffff) > DEBUG) return;
   sprintf(logname, "%s/es.log", getenv("HOME"));
   va_start(arg, text);
   vsnprintf(buf, 200, text, arg);
@@ -445,6 +445,11 @@ void es_log(int debuglevel, const char *text, ...)
   fputs(buf, fp);
   fprintf(fp, "\n");
   fclose(fp);
+  if (flags & LOG_STDERR)
+  {
+    fprintf(stderr, buf);
+    fprintf(stderr, "\n");
+  }
 #endif
 }
 #endif
@@ -572,7 +577,7 @@ void parse(CLIENT *client, char *buf)
   }
   else if (!strcmp (buf, "s"))
   {
-es_log(1, "silent");
+    es_log(1, "silent");
     lang->synth->clear(lang->synth);
   }
   else if (!strcmp(buf, "tts_set_punctuations") && token[0])
@@ -635,7 +640,7 @@ int handle(CLIENT *client)
     size += result;
     buf[size] = 0;
     }
-es_log(1, "handle: %s", buf);
+  es_log(1, "handle: %s", buf);
   p = buf;
   for (i = j = 0; i < size; i++)
   {
@@ -749,7 +754,7 @@ int main (int argc, char *argv[])
   if (!sockname) sockname = "/tmp/es.socket";
   local_fd = sockconnect(sockname);
   if (local_fd != -1) passthrough(infile, local_fd);
-  if (!(child = fork()))
+  if ((child = fork()))
   {
     usleep(200000);
     if (infile)
@@ -757,7 +762,7 @@ int main (int argc, char *argv[])
       local_fd = sockconnect(sockname);
       if (local_fd == -1)
       {
-	fprintf(stderr, "Daemon not accepting connections -- exiting\n");
+	es_log(1 | LOG_STDERR, "Daemon not accepting connections -- exiting\n");
 	exit(1);
       }
       passthrough(infile, local_fd);
@@ -776,7 +781,7 @@ int main (int argc, char *argv[])
   sock = sockopen(sockname);
   if (sock == -1)
   {
-    fprintf(stderr, "Error opening socket: %s\n", sockname);
+    es_log(1 | LOG_STDERR, "Error opening socket: %s\n", sockname);
     exit(1);
   }
   /* The following line doesn't seem to work.  Why not? */
@@ -788,11 +793,12 @@ int main (int argc, char *argv[])
   lang = language_open(NULL, lookup_string);
   if (lang == NULL)
   {
-    fprintf (stderr, "Error initializing language\n");
+    es_log(1 | LOG_STDERR, "Error initializing language\n");
     exit (1);
   }
-
+  daemon(0, 0);
   for (i = 0; i < NPARAMS; i++) lang->synth->get_param(lang->synth, i, &default_param[i]);
+
   for (;;)
   {
     FD_ZERO(&fds);
@@ -810,7 +816,7 @@ int main (int argc, char *argv[])
       {
 	client = realloc(client, ++maxclients * sizeof(CLIENT));
       }
-es_log(1, "Accepting connection\n");
+      es_log(1, "Accepting connection\n");
       client[numclients++].fd = accept(sock, 0, 0);
       client_init(&client[i]);
       continue;
@@ -821,7 +827,7 @@ es_log(1, "Accepting connection\n");
       {
 	if (handle(&client[i]))
 	{
-es_log(1, "Deactivating a client\n");
+	  es_log(1, "Deactivating a client\n");
 	  /* Deactivate client */
 	  close(client[i].fd);
 	  memcpy(client + i, client + i + 1, sizeof(CLIENT) * (--numclients - i));

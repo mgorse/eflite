@@ -1,3 +1,9 @@
+05/27/02:
+- Reinstated segfault handler when DEBUG is defined (was removed accidentally)
+- Have the child act as the daemon and call daemon() to prevent premature exits
+- Log some errors in addition to printing to stderr
+- Modified es_log to allow printing to standard error
+
 05/23/02:
 - Release v0.3.2
 

@@ -20,8 +20,9 @@ struct setting
 
 /* es.c */
 void terror(const char *s);
+#define LOG_STDERR 0x10000
 #ifdef DEBUG
-void es_log(int debuglevel, const char *text, ...);
+void es_log(int flags, const char *text, ...);
 #else
 #define es_log(...)
 #endif
