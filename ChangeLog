@@ -1,3 +1,7 @@
+10/10/02:
+es.c: Avoid dereferencing lang in finish() if it is NULL, thanks to Richard
+	Bilson
+
 08/24/02:
 tone.c: Fix a bug in generate_tone() that overflowed a buffer and caused crashes
 

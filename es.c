@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.13 2002/06/01 03:33:13 mgorse Exp $
+ * $Id: es.c,v 1.14 2002/10/11 01:42:03 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -300,7 +300,7 @@ void finish(int sig)
   for (i = 0; i < numclients; i++) close(client[i].fd);
   close(sock);
   unlink(sockname);
-  lang->synth->close(lang->synth);
+  if (lang) lang->synth->close(lang->synth);
   exit(0);
 }
 
