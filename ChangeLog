@@ -1,9 +1,15 @@
-05/25/02:
+07/16/03:
+Makefile.in: make directory before installing
+
+07/01/03:
+- Release v0.3.7
+
+05/25/03:
 es.c: add -d (debug) option to prevent forking
 configure.in, Makefile.in: search for -lc_r instead of -llthread and
    remove /usr/local/ hack
 
-05/18/02:
+05/18/03:
 configure.in, Makefile.in: lpthread -> lthread, explicitly search /usr/local/lib (for FreeBSD)
 
 05/17/03:
