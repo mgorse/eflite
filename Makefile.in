@@ -32,7 +32,7 @@ eflite: fs.o es.o soccon.o sockopen.o tone.o $(FLITE_LIBS)
 	$(CC) $(LDFLAGS) -o $@ $^ -lpthread -lm $(LIBS)
 
 fs.o: fs.c
-	$(CC) $(CFLAGS) -I. -I$(flite_dir)/include -DREGISTER_VOX=register_$(FL_VOX) -DSTANDALONE -DEFLITE -c -o $@ $<
+	$(CC) $(CFLAGS) -I. -I$(flite_dir)/include -DREGISTER_VOX=register_$(subst cmu_us_kal16,cmu_us_kal,$(FL_VOX)) -DSTANDALONE -DEFLITE -c -o $@ $<
 
 tone.o: tone.c
 	$(CC) $(CFLAGS) -I$(flite_dir)/include -DEFLITE -c -o $@ $<

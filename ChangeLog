@@ -1,3 +1,6 @@
+02/013/02:
+Makefile.in: substitute cmu_us_kal for cmu_us_kal16 when passing REGISTER_VOX
+
 02/01/03:
 - fs.c: Re-open the sound device for each sample, so that multiple consecutive samples of different frequencies will play correctly
 
