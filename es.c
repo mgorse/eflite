@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.16 2002/12/23 02:21:48 mgorse Exp $
+ * $Id: es.c,v 1.17 2003/01/20 17:51:54 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -85,7 +85,7 @@ char *ascii[256] = {
   "greater than",
   "question",
   "at",
-  "ay",
+  "a",
   "b",
   "c",
   "d",
@@ -117,7 +117,7 @@ char *ascii[256] = {
   "caret",
   "underline",
   "accent",
-  "ay",
+  "a",
   "b",
   "c",
   "d",

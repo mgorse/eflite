@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.11 2002/05/28 01:42:49 mgorse Exp $
+ * $Id: fs.c,v 1.12 2002/10/11 01:42:03 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -298,35 +298,33 @@ static void * play(void *s)
   int *sparam = ((synth_t *)s)->state->param;
 
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-  es_log(2, "play: init");
-  for (;!audiodev;)
-  {
-    pthread_mutex_lock(&wave_mutex);
-    if (ac[ac_head].type == NONE)
-    {
-      pthread_mutex_unlock(&wave_mutex);
-      pas = (ac_synthpos > 0? 1: 0);
-      return NULL;
-    }
-    wptr = ac[ac_head].data;
-    /* N.b. Following assumes that all samples have the same format */
-    audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
-    pthread_mutex_unlock(&wave_mutex);
-    if (!audiodev || (int)audiodev->platform_data == -1)
-    {
-      if (errno == EBUSY)
-      {
-	es_log(2, "Audio device is busy; trying again");
-	close_audiodev();
-	usleep(20000);
-	continue;
-      }
-    terror("audio_open");
-    }
-  }
-  es_log(2, "play: %d %d", ac_head, ac_tail);
+  es_log(2, "play: init: ac-head=%d ac_tail=%d", ac_head, ac_tail);
   while (ac_head < ac_synthpos)
   {
+    for (;!audiodev;)
+    {
+      pthread_mutex_lock(&wave_mutex);
+      if (ac[ac_head].type == NONE)
+      {
+	pthread_mutex_unlock(&wave_mutex);
+	pas = (ac_synthpos > 0? 1: 0);
+	return NULL;
+      }
+      wptr = ac[ac_head].data;
+      audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
+      pthread_mutex_unlock(&wave_mutex);
+      if (!audiodev || (int)audiodev->platform_data == -1)
+      {
+	if (errno == EBUSY)
+	{
+	  es_log(2, "Audio device is busy; trying again");
+	  close_audiodev();
+	  usleep(20000);
+	  continue;
+	}
+      terror("audio_open");
+      }
+    }
     es_log(2, "play: ac_head=%d type=%d", ac_head, ac[ac_head].type);
     if (ac[ac_head].type == NONE)
     {
@@ -367,6 +365,7 @@ static void * play(void *s)
     time_left -= (float)playlen / wptr->sample_rate;
     pthread_mutex_lock(&wave_mutex);
     ac_destroy(&ac[ac_head]);
+    close_audiodev();
     if (++ac_head > (ac_size >> 1))
     {
       es_log(1, "play: compacting wave pointers");
@@ -383,7 +382,6 @@ static void * play(void *s)
   if (ac_head == ac_tail)
   {
     ac_head = ac_tail = wave_thread_active = 0;
-    close_audiodev();
   }
   else pas = 1;	/* there is more data -- need to re-enter */
   pthread_mutex_unlock(&wave_mutex);
@@ -715,9 +713,11 @@ static int s_set_param(struct synth_struct *s, synth_par_t par, int value)
 
     switch (par) {
     case S_SPEED:               /* default: 1 */
+	es_log(2, "Setting duration_stretch to %4.3f", (float)1000 / value);
 	feat_set_float(v->features, "duration_stretch", (float)1000 / value);
         break;
     case S_PITCH:               /* default: 100 */
+      es_log(2, "Setting pitch to %3.3f", exp((float)value / 1000) * 100 / exp(1));
 	feat_set_float(v->features, "int_f0_target_mean", exp((float)value / 1000) * 100 / exp(1));
 	/* tbd */
         break;

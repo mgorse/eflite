@@ -1,3 +1,6 @@
+02/01/03:
+- fs.c: Re-open the sound device for each sample, so that multiple consecutive samples of different frequencies will play correctly
+
 01/20/03:
 es.c: use unsigned chars for punctuation (see Debian bug 177294)
 es.h: expand punctuation array to 256 entries
