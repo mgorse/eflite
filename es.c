@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.12 2002/05/28 01:50:13 mgorse Exp $
+ * $Id: es.c,v 1.13 2002/06/01 03:33:13 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -570,7 +570,12 @@ void parse(CLIENT *client, char *buf)
 	wpm).  The following conversion is accurate for it but may not be
 	accurate for other synths.  It may be useful to add an api function to
 	get the proper rate in wpm. */
-    client->param[0] = (atoi(token[0]) * 23) / 4;
+    client->param[S_SPEED] = (atoi(token[0]) * 23) / 4;
+  }
+  else if ((!strcmp (buf, "v") || !strcmp(buf, "tts_set_speech_volume")) && token[0])
+  {
+    if (text_buffered) es_synthesize(client);
+    client->param[S_VOLUME] = atoi(token[0]);
   }
   else if (!strcmp (buf, "reset"))
   {

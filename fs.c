@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.10 2002/05/21 19:17:48 mgorse Exp $
+ * $Id: fs.c,v 1.11 2002/05/28 01:42:49 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -295,6 +295,7 @@ static void * play(void *s)
   int playlen;
   int skip;
   cst_wave *wptr;
+  int *sparam = ((synth_t *)s)->state->param;
 
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
   es_log(2, "play: init");
@@ -343,7 +344,7 @@ static void * play(void *s)
     wptr = ac[ac_head].data;
     if (ac[ac_head].type == SPEECH)
     {
-      skip = 1500000 / ((synth_t *)s)->state->param[S_SPEED];
+      skip = 1500000 / sparam[S_SPEED];
       playlen = wptr->num_samples - (skip * 2);
       if (playlen > 0 && playlen < 500) playlen += (skip * 2) / 3;
     }
@@ -357,7 +358,9 @@ static void * play(void *s)
     time_left += (float)playlen / wptr->sample_rate;
     if (playlen > 0)
     {
-audio_write(audiodev, wptr->samples + skip, playlen * 2);
+      if (sparam[S_VOLUME] != 1000)
+	cst_wave_rescale(wptr, (sparam[S_VOLUME] << 16) / 1000);
+      audio_write(audiodev, wptr->samples + skip, playlen * 2);
     }
     es_log(2, "play: syncing");
     audio_flush(audiodev);

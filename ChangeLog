@@ -1,6 +1,9 @@
 08/24/02:
 tone.c: Fix a bug in generate_tone() that overflowed a buffer and caused crashes
 
+08/18/02:
+es.c, fs.c: add support for adjusting volume
+
 07/15/02:
 - Release v0.3.3
 
