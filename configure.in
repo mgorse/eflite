@@ -9,7 +9,8 @@ if test "x$GCC" = "xyes"; then
 fi
 
 AC_CHECK_LIB(socket,connect)
-AC_SEARCH_LIBS(pthread_create,pthread lpthread)
+dnl FreeBSD may not automatically search /usr/local/lib
+AC_SEARCH_LIBS(pthread_create,pthread lthread,,,-L/usr/local/lib)
 
 AC_ARG_VAR(flite_dir, Prefix for Festival Lite files)
 
