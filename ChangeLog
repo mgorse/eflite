@@ -1,3 +1,8 @@
+01/20/03:
+es.c: use unsigned chars for punctuation (see Debian bug 177294)
+es.h: expand punctuation array to 256 entries
+- Release v0.3.5
+
 12/22/02:
 es.c: Read directly from fd 0 instead of /dev/stdin (/dev/stdin doesn't exist everywhere)
 
