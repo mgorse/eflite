@@ -1,0 +1,30 @@
+README for FLite Emacspeak server
+        v0.2.0; 03/03/02
+========================================================================
+This code allows Emacspeak, as well as yasr and potentially Brass, to
+interface with the Festival Lite speech synthesizer.  It is currently in
+the beta stage and not necessarily well polished (well, neither is its
+documentation, for that matter), but it is working for me, although I have
+done most of my testing with yasr.  See the file INSTALL for instructions
+on compiling eflite and getting it to work with screen readers.
+
+Eflite uses the audio library included with Festival Lite, so it
+theoretically inherits ALSA support, although I seem to remember having
+trouble getting the ALSA code to compile (it seems that the ALSA API
+differs depending on which version is being used).
+
+The source is divided into two parts: a generic parser (es.c and some
+helper files) and a file for interfacing with Festival Lite (fs.c).
+The interface used by fs.c is borrowed from Roger Butenuth's speech
+library used by BRASS (in fact, I used his ViaVoice module as a starting
+point to write fs.c).  However, fs.c can be built to link against
+es.c directly if STANDALONE is defined (this is done in the Makefile).
+There may be legal issues that would arise if fs.c were linked against
+libspeech.a from BRASS, since BRASS is GPLed whereas FLite is not,
+but I am not sure one way or the other.
+
+Send flames, bug reports, etc. to mgorse@alum.wpi.edu.  You can also
+catch me on #blinux on openprojects, as "vortex"
+
+-Michael P. Gorse-
+-mgorse@alum.wpi.edu

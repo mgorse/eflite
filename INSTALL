@@ -1,0 +1,95 @@
+Installation of EFlite can be broken down into five steps; compiling
+FLite (if you haven't done that already), compiling, configuring,
+and testing
+EFlite, and configuring Eflite to work with a screen reader.
+
+=== 1. Compiling Festival Lite ===
+If you already have FLite compiled and its headers and libraries
+available, then you can skip this step.  Otherwise, download FLite
+and compile it.  You can get it from http://www.speech.cs.cmu.edu.
+Note that Eflite does not use the generated "flite" binary but instead
+links against the libraries.
+
+=== 2. Compiling EFlite ===
+First, run configure.  This will create a Makefile.  It will try to guess at
+the location of your FLite libraries.  If it guesses incorrectly or does not
+succeed at finding them, then you will need to specify the directory with a
+command similar to the following:
+./configure flite_dir=/usr/src/flite-1.1-release
+
+Once a Makefile has been created, run make.  Assuming all goes well, you
+should get a binary called eflite.  You may then run "make install" to
+install the binary.
+
+=== 3. Configuring EFlite
+This step is optional.  When EFlite starts, it looks for a configuration
+file called .es.conf in the user's home directory.  If it does not
+find one there, it looks for a configuration file named /etc/es.conf.
+Lines in the configuration file are of the form
+key=value
+ie: sockname=/tmp/es.socket
+
+The following options may be specified in the configuration file:
+sockname: Specifies the name of the socket that EFlite clients use
+to communicate with their server.  When EFlite is run, it first tries
+to connect to this socket.  If this succeeds, then it will read input
+from the file passed to it on the command line, or standard input if
+'-' is specified or if EFlite is run without arguments.  Upon failing
+to connect to the specified socket, EFlite will fork, and the forked
+process will act as a server, accepting connections on the socket.
+
+punct_some: List of punctuation characters to be spoken when the
+punctuation mode is set to "some.".  Default is @#$%^&_[]{}\|
+
+punct_all: List of punctuation characters to be spoken
+when the punctuation mode is set to "all."  Default is
+!@#$%^&*()-=_+[]\|{};':",./<>?
+
+=== 4. Testing EFlite ===
+Once you have compiled and configured EFlite, you may want to test it
+to ensure that all is well.  One way to do this would be to run it and
+type in the following commands once the program starts:
+q {This is a test}
+d
+
+The first line tells the server to put the test "This is a test" in its
+queue, and the second line tells it to speak the text in the queue, so
+it should read, "This is a test."  If something is wrong, then you will
+hopefully get a reasonably descriptive error message explaining what went
+wrong, although I wouldn't bet my life on it.  If you do have problems,
+then let me know.
+
+=== 5. Configuring your screen reader ===
+[I will discuss Emacspeak and Yasr in this section.  If anyone gets
+Eflite to work with BRASS or anything else and would like to contribute
+a section for it, then send me some email.]
+
+=== 5.1. Emacspeak:
+- Set DTK_TCL to the location of your EFlite binary.  If you use
+/usr/bin/emacspeak, then it may be easiest to place  a line similar to the
+following into emacspeak.conf:
+export DTK_TCL=/usr/local/bin/eflite
+
+Alternatively, the following shell script should get Emacspeak running with
+EFlite, although you may need to edit some path names:
+
+#!/bin/sh
+
+export EMACS_UNIBYTE=1
+export DTK_TCL=/usr/local/bin/eflite
+emacs -q -l /usr/share/emacs/site-lisp/emacspeak/lisp/emacspeak-setup.el
+# You may want to add "-l $HOME/.emacs" to the previous line
+
+=== 5.2. Yasr ===
+in ~/.yasr.conf (or /etc/yasr.conf), set the value of "Synthesizer" to
+"Emacspeak server," and set "Synthesizer Port" to the location of your
+Eflite binary, preceeded by a |. Ie:
+Synthesizer=Emacspeak server
+Synthesizer port=|/home/mike/brass/Speech/fs
+
+========================================================================
+If there is anything that I haven't covered (and I'm sure that there is),
+then let me know.
+
+-Michael P. Gorse
+-mgorse@alum.wpi.edu

@@ -1,0 +1,57 @@
+dnl Much of this code stolen from Festival Lite's configure.in
+
+AC_INIT(es.h)
+
+AC_PROG_CC
+
+if test "x$GCC" = "xyes"; then
+	CFLAGS="$CFLAGS -Wall"
+fi
+
+AC_ARG_VAR(flite_dir, Prefix for Festival Lite files)
+
+dnl If flite_dir was not specified, then try to guess a value
+if test "x$flite_dir" = x; then
+  if test -f /usr/src/flite-1.1-release/lib/libflite.a; then
+    flite_dir=/usr/src/flite-1.1-release;
+  elif test -f /usr/local/src/flite-1.1-release/lib/libflite.a; then
+    flite_dir=/usr/local/src/flite-1.1-release;
+  elif test -f /usr/lib/libflite.a; then
+    flite_dir=/usr
+  elif test -f /usr/local/lib/libflite.a; then
+    flite_dir=/usr/local
+  elif test -f /opt/flite/lib/libflite.a; then
+    flite_dir=/opt
+  else
+    AC_MSG_ERROR(Cannot locate libflite.a.  Please specify flite_dir explicitly (see INSTALL).  If you do not have FLite headers and libraries available, then compile FLite and re-run configure.)
+    fi
+  fi
+
+echo Using $flite_dir as FLite prefix.
+
+dnl
+dnl language/lexicon/voice parameters (we don't really support multiple
+dnl ones yet, but its included as a start
+dnl
+AC_ARG_WITH( lang, [  --with-lang           with language ],
+        FL_LANG=$with_lang )
+if test "x$with_lang" = "x"; then
+        FL_LANG="usenglish"
+fi
+AC_SUBST(FL_LANG)
+
+AC_ARG_WITH( vox, [  --with-vox            with vox ],
+        FL_VOX=$with_vox )
+if test "x$with_vox" = "x"; then
+        FL_VOX="cmu_us_kal"
+fi
+AC_SUBST(FL_VOX)
+
+AC_ARG_WITH( lex, [  --with-lex            with lexicon ],
+        FL_LEX=$with_lex )
+if test "x$with_lex" = "x"; then
+        FL_LEX="cmulex"
+fi
+AC_SUBST(FL_LEX)
+
+AC_OUTPUT(Makefile)
