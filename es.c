@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.3 2002/03/04 15:05:44 mgorse Exp $
+ * $Id: es.c,v 1.4 2002/03/05 14:07:40 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -414,12 +414,7 @@ void es_addtext(CLIENT *client, char *buf)
   text_buffered = 1;
 }
 
-int log_safe(char *text)
-{  for (;*text;text++) if (*text == '%') return 0;
-  return 1;
-}
-
-void es_log(char *text, ...)
+void es_log(const char *text, ...)
 {
 #ifdef DEBUG
   char buf[200];
@@ -575,7 +570,8 @@ es_log("silent");
        to the sound card. */
     /* tbc - For the FLite server, we could use the FLite audio library for
        this, but that would introduce a dependency on FLite. */
-    if (!speaker_tone(freq, dur)) dsp_tone(freq, dur);
+    /* tbd - allow user to set volume */
+    if (!speaker_tone(freq, dur)) dsp_tone(freq, dur, 8192);
   }
 }
 
@@ -644,7 +640,7 @@ es_log("handle: %s", buf);
 }
 
 /* Like perror() but also log the error and exit */
-void terror(char *s)
+void terror(const char *s)
 {
   int errnum = errno;
 

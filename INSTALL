@@ -88,7 +88,7 @@ in ~/.yasr.conf (or /etc/yasr.conf), set the value of "Synthesizer" to
 "Emacspeak server," and set "Synthesizer Port" to the location of your
 Eflite binary, preceeded by a |. Ie:
 Synthesizer=Emacspeak server
-Synthesizer port=|/home/mike/brass/Speech/fs
+Synthesizer port=|/usr/local/bin/eflite
 
 ========================================================================
 If there is anything that I haven't covered (and I'm sure that there is),

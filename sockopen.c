@@ -1,3 +1,7 @@
+/* sockopen.c -- Function to open a socket
+ * $id$
+ */
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -5,7 +9,7 @@
 #include <sys/un.h>
 #include <syslog.h>
 
-int sockopen(char *fname)
+int sockopen(const char *fname)
 {
   int sock;
   struct sockaddr_un addr;

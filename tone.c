@@ -28,7 +28,7 @@ int speaker_tone(int freq, int dur)
 
 #define PI 3.14192653589793238
 
-int dsp_tone(int freq, int dur)
+int dsp_tone(int freq, int dur, int vol)
 {
   int fd;
   int fmt = AFMT_S16_LE;
@@ -46,7 +46,7 @@ int dsp_tone(int freq, int dur)
   ioctl(fd, SNDCTL_DSP_SPEED, &speed);
   for (n = 0; n < max; n += step)
   {
-    val = sin(n) * 32767;
+    val = sin(n) * vol;
     write(fd, &val, 2);
   }
   close(fd);

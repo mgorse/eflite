@@ -8,7 +8,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: viavoice.c,v 1.3 2001/02/20 20:40:49 butenuth Exp $
+ * $Id: fs.c,v 1.1.1.1 2002/03/03 19:49:48 mgorse Exp $
  */
 
 #include <stdio.h>
@@ -23,9 +23,8 @@
 #include <sys/soundcard.h>
 #ifndef STANDALONE
 #include <dlfcn.h>
-#else
-#include "language.h"
 #endif
+#include "es.h"
 
 #include "flite.h"
 #include "flite_version.h"
@@ -112,13 +111,6 @@ static float time_left = 0;
 static int s_count = 0;
 
 extern cst_voice *REGISTER_VOX(const char *voxdir);
-#ifdef DEBUG
-extern void es_log(char *text, ...);
-extern int log_safe(char *text);
-#else
-#define es_log(...)
-#define log_safe(...) 0
-#endif
 extern int cst_alloc_out;
 
 #ifndef STANDALONE
@@ -149,6 +141,13 @@ void _fini(void)
  * Return 0 on success, 1 on error.
  * ----------------------------------------------------------------------
  */
+void segfault(int sig)
+{
+  es_log("Got a seg fault -- exiting");
+  printf("Got a seg fault -- exiting.\n");
+  exit(11);
+}
+
 synth_t *synth_open(void *context, lookup_string_t lookup)
 {
     synth_t *s;
@@ -162,9 +161,7 @@ synth_t *synth_open(void *context, lookup_string_t lookup)
     if (ref_count == 0) {
       unlink("log");
 
-      /* Following is an attempt to get around a problem on my Thinkpad where
-	 the driver quickly gets into a state where it thinks it is busy and
-	 will not re-open after being closed. */
+      signal(SIGSEGV, segfault);
       flite_init();
       v = REGISTER_VOX(NULL);
       pthread_attr_init(&ta);
@@ -276,10 +273,10 @@ static void * play(void *s)
   for (;!audiodev;)
   {
     pthread_mutex_lock(&wave_mutex);
-    if (wave_synthpos && !waves[0])
+    if (!waves[0])
     {
       pthread_mutex_unlock(&wave_mutex);
-      pas = 1;
+      pas = (wave_synthpos > 0? 1: 0);
       return NULL;
     }
     /* N.b. Following assumes that all samples have the same format */
@@ -287,7 +284,7 @@ static void * play(void *s)
     pthread_mutex_unlock(&wave_mutex);
     if (!audiodev || (int)audiodev->platform_data == -1)
     {
-      if (errno == EBUSY || errno == EBADF)
+      if (errno == EBUSY)
       {
 //es_log("Audio device is busy; trying again");
 	if (audiodev) audio_close(audiodev);
@@ -295,11 +292,9 @@ static void * play(void *s)
 	usleep(20000);
 	continue;
       }
-    perror("/dev/dsp");
-    exit(1);
+    terror("audio_open");
     }
   }
-//es_log("play: opened dsp");
 //es_log("play: %d %d", wave_head, wave_tail);
   while (wave_head < wave_synthpos)
   {
@@ -377,7 +372,7 @@ static void * synthesize(void *s)
       return NULL;
     }
 //es_log("synthesize: %8lx %8lx\n", (long)wptr, (long)wptr->samples);
-if (log_safe(text + text_head)) es_log("text=%s", text + text_head);
+es_log("text=%s", text + text_head);
     while (text[text_head]) text_head++;
     text_head++;	/* This is not a bug. */
     pthread_mutex_lock(&text_mutex);

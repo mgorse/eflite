@@ -1,10 +1,14 @@
+/* soccon.c - function to open a connection to a socket
+ * $Id$
+ */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
-int sockconnect(char *fname)
+int sockconnect(const char *fname)
 {
   struct sockaddr_un addr;
   int sock;
