@@ -1,4 +1,6 @@
-/* es.c - Generic code for creating an Emacspeak server */
+/* es.c - Generic code for creating an Emacspeak server
+ * $Id$
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +12,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 #include "es.h"
 #include <dlfcn.h>
 
@@ -581,6 +584,7 @@ int handle(CLIENT *client)
   int i, j;
   int size;
   char *p;
+  int in_braces = 0;
 
   size = read(client->fd, buf, bufsize - 1);
   if (!size) return 1;
@@ -595,17 +599,19 @@ int handle(CLIENT *client)
     size += read(client->fd, buf + size, 200);
     buf[size] = 0;
     }
-if (log_safe(buf)) es_log("handle: %s", buf);
+es_log("handle: %s", buf);
   p = buf;
   for (i = j = 0; i < size; i++)
   {
-    if (buf[i] == 13 || buf[i] == 10)
+    if ((buf[i] == 13 || buf[i] == 10) && !in_braces)
     {
       if ((*p == 'l' || *p == 'q') && *(p + 1) == ' ')
       {
 	for (j = size - 2; j >= i; j--)
 	{
-	  if (buf[j] == 13 && buf[j + 1] == 's' && buf[j + 2] == 13)
+	  if (buf[j] == '{') in_braces = 1;
+	  else if (buf[j] == '}') in_braces = 0;
+	  else if (!in_braces && buf[j] == 13 && buf[j + 1] == 's' && buf[j + 2] == 13)
 	  {
 	    i = j + 2;
 	  }
@@ -618,8 +624,20 @@ if (log_safe(buf)) es_log("handle: %s", buf);
       }
       p = buf + i + 1;
     }
+    else if (buf[i] == '{') in_braces = 1;
+    else if (buf[i] == '}') in_braces = 0;
   }
   return 0;
+}
+
+/* Like perror() but also log the error and exit */
+void terror(char *s)
+{
+  int errnum = errno;
+
+  es_log("%s: %s", s, strerror(errnum));
+  fprintf(stderr, "%s: %s\n", s, strerror(errnum));
+  exit(errnum);
 }
 
 void passthrough(char *infile, int outfd)
@@ -630,24 +648,26 @@ void passthrough(char *infile, int outfd)
 
   es_log("es: reading input from %s", infile);
   fd = open(infile, O_RDONLY);
-  if (fd == -1)
-  {
-    perror("open");
-    exit(1);
-  }
+  if (fd == -1) terror("open");
   while (1)
   {
     size = read(fd, buf, sizeof(buf));
-    if (size == -1)
-    {
-      perror("read");
-      exit(-1);
-    }
+    if (size == -1) terror("read");
     if (size == 0)
     {
+      int is_fifo;
+      struct stat stat;
+      fstat(fd, &stat);
+      is_fifo = S_ISFIFO(stat.st_mode);
       close(fd);
-      fd = open(infile, O_RDONLY);
-      continue;
+      if (is_fifo)
+      {
+	/* Re-open it */
+	fd = open(infile, O_RDONLY);
+	continue;
+      }
+      /* Otherwise terminate */
+      exit(0);
     }
     if (buf[0] == 3) break;
     write(outfd, buf, size);
