@@ -7,8 +7,7 @@ CC       = @CC@
 CFLAGS   = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 DEFS     = @DEFS@
-# FreeBSD may not search /usr/local/lib automatically
-LIBS = -L/usr/local/lib @LIBS@
+LIBS = @LIBS@
 
 AUDIOLIBS   = @AUDIOLIBS@
 
