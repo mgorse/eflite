@@ -1,3 +1,8 @@
+06/05/05:
+es.c: remove unneeded \n from es_log calls
+es.c: work around file descriptor issue with fork() on cygwin
+configure.in, Makefile.in: add AUDIOLIBS determination from flite
+
 01/20/05:
 Corrected INSTALL documentation for Emacspeak 19 and up
 From Jeremy Huddleston <jeremy@outersquare.org>:
