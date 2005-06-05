@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.21 2005/01/21 00:16:03 mgorse Exp $
+ * $Id: es.c,v 1.22 2005/01/21 00:21:39 mgorse Exp $
  */
 
 #define _GNU_SOURCE
@@ -800,7 +800,7 @@ int main (int argc, char *argv[])
   {
     if(local_fd != -1)
     {
-      es_log(1 | LOG_STDERR, "Socket already exists.  Exiting.\n");
+      es_log(1 | LOG_STDERR, "Socket already exists.  Exiting.");
       exit(1);
     }
   }
@@ -813,7 +813,7 @@ int main (int argc, char *argv[])
       local_fd = sockconnect(sockname);
       if (local_fd == -1)
       {
-        es_log(1 | LOG_STDERR, "Daemon not accepting connections -- exiting\n");
+        es_log(1 | LOG_STDERR, "Daemon not accepting connections -- exiting");
         exit(1);
       }
       passthrough(infile, local_fd);
@@ -833,22 +833,27 @@ int main (int argc, char *argv[])
   sock = sockopen(sockname);
   if (sock == -1)
   {
-    es_log(1 | LOG_STDERR, "Error opening socket: %s\n", sockname);
+    es_log(1 | LOG_STDERR, "Error opening socket: %s", sockname);
     exit(1);
   }
   /* The following line doesn't seem to work.  Why not? */
   fchmod(sock, 0666);
-  es_log(1, "Socket initialized\n");
+  es_log(1, "Socket initialized");
   signal(SIGINT, finish);
   signal(SIGTERM, finish);
   //signal (SIGHUP, SIG_IGN);
   lang = language_open(NULL, lookup_string);
   if (lang == NULL)
   {
-    es_log(1 | LOG_STDERR, "Error initializing language\n");
+    es_log(1 | LOG_STDERR, "Error initializing language");
     exit (1);
   }
+#ifdef __CYGWIN__
+  /* Under cygwin, calling daemon() would kill the parent's stdin, too */
+  if (!debug && daemon_only) daemon(0, 0);
+#else
   if (!debug) daemon(0, 0);
+#endif
   for (i = 0; i < NPARAMS; i++) lang->synth->get_param(lang->synth, i, &default_param[i]);
 
   for (;;)
@@ -868,7 +873,7 @@ int main (int argc, char *argv[])
       {
 	client = realloc(client, ++maxclients * sizeof(CLIENT));
       }
-      es_log(1, "Accepting connection\n");
+      es_log(1, "Accepting connection");
       client[numclients++].fd = accept(sock, 0, 0);
       client_init(&client[i]);
       continue;
@@ -879,10 +884,10 @@ int main (int argc, char *argv[])
       {
 	if (handle(&client[i]))
 	{
-	  es_log(1, "Deactivating a client\n");
+	  es_log(1, "Deactivating a client");
 	  /* Deactivate client */
 	  close(client[i].fd);
-	  memcpy(client + i, client + i + 1, sizeof(CLIENT) * (--numclients - i));
+	  memmove(client + i, client + i + 1, sizeof(CLIENT) * (--numclients - i));
 	  if (numclients == 0) finish(0);
 	}
 	break;
