@@ -1,0 +1,11 @@
+There are several people whom I need to thank for making this program
+possible.  First and foremost, I must thank Kevin Lenzo, Alan Black,
+and anyone else who has been involved with the Festival and Festival
+Lite projects.  Without all of their hard work in creating a robust
+text-to-speech synthesizer.  Without FLite, EFlite could not exist.
+The alsa support and accompanying thread cleanups were done by Lukas
+Loehrer.  Several changes were made by Jeremy Huddleston, who also
+ported eflite to gentoo.  There are probably others who I am leaving out,
+so please let me know if you think I should have included you.
+
+=-MPG
