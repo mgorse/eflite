@@ -4,6 +4,7 @@
 # Do not hand edit.
 
 CC       = @CC@
+AUDIODEFS = @AUDIODEFS@
 CFLAGS   = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 DEFS     = @DEFS@
@@ -33,7 +34,7 @@ eflite: fs.o es.o soccon.o sockopen.o tone.o
 	$(CC) $(LDFLAGS) -o $@ $^ -lm $(LIBS) $(FLITE_LIBS) $(AUDIOLIBS)
 
 fs.o: fs.c
-	$(CC) $(CFLAGS) -I. -I$(flite_include_dir) -DREGISTER_VOX=register_$(subst cmu_us_kal16,cmu_us_kal,$(FL_VOX)) -DSTANDALONE -DEFLITE -c -o $@ $<
+	$(CC) $(CFLAGS) @AUDIODEFS@ -I. -I$(flite_include_dir) -DREGISTER_VOX=register_$(subst cmu_us_kal16,cmu_us_kal,$(FL_VOX)) -DSTANDALONE -DEFLITE -c -o $@ $<
 
 tone.o: tone.c
 	$(CC) $(CFLAGS) -I$(flite_include_dir) -DEFLITE -c -o $@ $<
