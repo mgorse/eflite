@@ -1,5 +1,7 @@
 2006-05-24 Michael P. Gorse <mgorse@alum.wpi.edu>
 
+	* Release v0.4.0
+	* soccon.c, sockopen.c: add support for tcp connections
 	* es.c: add include of sys/socket.h
 
 2006-05-28 Lukas Loehrer <loehrerl@gmx.net>
