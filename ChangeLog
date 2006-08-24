@@ -1,37 +1,68 @@
-06/05/05:
-es.c: remove unneeded \n from es_log calls
-es.c: work around file descriptor issue with fork() on cygwin
-configure.in, Makefile.in: add AUDIOLIBS determination from flite
+2006-05-24 Michael P. Gorse <mgorse@alum.wpi.edu>
 
-01/20/05:
-Corrected INSTALL documentation for Emacspeak 19 and up
-From Jeremy Huddleston <jeremy@outersquare.org>:
-es.c: fix EOF bug
-es.c: add -D (daemon) option
-Support shared libraries
-Release v0.3.9
+	* es.c: add include of sys/socket.h
 
-02/20/04:
-es.c: add --version
-fs.c: fix size warning
-Release v0.3.8
+2006-05-28 Lukas Loehrer <loehrerl@gmx.net>
 
-10/28/03:
-fs.c: clean up handling of wave mutex; fixes new deadlock for me
+	* es.c: Setting socket permissions works now
+	
+2006-05-12 Lukas Loehrer <loehrerl@gmx.net>
 
-07/16/03:
-Makefile.in: make directory before installing
+	* fs.c: Only reopen audio device after failure when using OSS, exit otherwise.
+	
+2006-02-21 Lukas Loehrer <loehrerl@gmx.net>
 
-07/01/03:
-- Release v0.3.7
+	* fs.c: Debuging support for mutexes
+	* fs.c: Removed critical cancellation point from WAVE_UNLOCK and TEXT_UNLOCK
+	* fs.c: Workaround in s_clrear() for condition variable corruption	
+	
+2006-02-17 Lukas Loehrer <loehrerl@gmx.net>
 
-05/25/03:
-es.c: add -d (debug) option to prevent forking
-configure.in, Makefile.in: search for -lc_r instead of -llthread and
-   remove /usr/local/ hack
+	* configure.in: Fixed audio ib detection for alsa
+	* es.c: Added -c (contex) option to allow multiple eflite server instances
+	* fs.c: Only buffer 40 seconds of wave data
+	* fs.c: Simplified thread synchronization by using pthread condition
+	      variables. This is a large change! See top of fs.c file for notes.
+	
+2006-05-05 Michael P. Gorse <mgorse@alum.wpi.edu>
 
-05/18/03:
-configure.in, Makefile.in: lpthread -> lthread, explicitly search /usr/local/lib (for FreeBSD)
+	* es.c: remove unneeded \n from es_log calls
+	* es.c: work around file descriptor issue with fork() on cygwin
+	* configure.in, Makefile.in: add AUDIOLIBS determination from flite
+
+2005-01-20 Michael P. Gorse <mgorse@alum.wpi.edu>
+
+	* INSTALL: Corrected for Emacspeak 19 and up
+	* Release v0.3.9
+
+2005-01-20 Jeremy Huddleston <jeremy@outersquare.org>:
+
+	* es.c: fix EOF bug
+	* es.c: add -D (daemon) option
+	* configure.in, Makefile.in: Support shared libraries
+
+2004-02-20 Michael P. Gorse <mgorse@alum.wpi.edu>
+	 * es.c: add --version
+	* fs.c: fix size warning
+	* Release v0.3.8
+
+2003-10-28 Michael P. Gorse <mgorse@alum.wpi.edu>
+	* fs.c: clean up handling of wave mutex; fixes new deadlock for me
+
+2003-07-16 Michael P. GOrse <mgorse@alum.wpi.edu>
+	* Makefile.in: make directory before installing
+
+2003-07-01 Michael P. GOrse <mgorse@alum.wpi.edu>
+	* - Release v0.3.7
+
+2003-05-25 Michael P. Gorse <mgorse@alum.wpi.edu>
+	* es.c: add -d (debug) option to prevent forking
+	* configure.in, Makefile.in: search for -lc_r instead of -llthread and
+      	  remove /usr/local/ hack
+
+2003-05-18 Michael P. Gorse <mgorse@alum.wpi.edu>
+	* configure.in, Makefile.in: lpthread -> lthread, explicitly
+	  search /usr/local/lib (for FreeBSD)
 
 05/17/03:
 configure.in, Makefile.in: check for pthread_create in pthread and lpthread
@@ -169,3 +200,5 @@ fs.c.
 
 02/23/02:
 Release (v0.1.0 (first release)
+
+	
