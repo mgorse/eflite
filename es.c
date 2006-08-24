@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.22 2005/01/21 00:21:39 mgorse Exp $
+ * $Id: es.c 29 2006-05-28 11:02:39Z luke $
  */
 
 #define _GNU_SOURCE
@@ -9,7 +9,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -17,6 +16,7 @@
 #include <errno.h>
 #include "es.h"
 #include <dlfcn.h>
+#include <sys/socket.h>
 
 /* This table basically stolen from Vocal-Eyes, and I am not even sure if it
  * is correct under Linux. */
@@ -762,6 +762,7 @@ int main (int argc, char *argv[])
   int i;
   int maxclients = 0;	/* Number of clients with space allocated */
   char *infile = NULL;
+  char *context = NULL;
   int max;
   int local_fd;
   int child;
@@ -770,21 +771,27 @@ int main (int argc, char *argv[])
   int debug = 0;
   int daemon_only = 0;
 
-  while (more_opts) switch(getopt_long(argc, argv, "Ddf:v", (struct option *)&longopts, NULL))
+  while (more_opts)
   {
-  case 'D':
-    daemon_only = 1;
-    break;
-  case 'd':
-    debug = 1;
-    break;
-  case 'f':
-    input = optarg;
-    break;
-  case 'v':
-    printf("Eflite 0.3.9\n");
-    exit(0);
-  default: more_opts = 0;
+	switch(getopt_long(argc, argv, "Ddf:vc:", (struct option *)&longopts, NULL))
+	{
+	case 'D':
+	  daemon_only = 1;
+	  break;
+	case 'd':
+	  debug = 1;
+	  break;
+	case 'f':
+	  input = optarg;
+	  break;
+	case 'c':
+	  context = optarg;
+	  break;
+	case 'v':
+	  printf("Eflite ll20060528\n");
+	  exit(0);
+	default: more_opts = 0;
+	}
   }
   /* The following allows an input file name to be specified on the command
      line.  If "-" is specified, then stdin is read from, as if no argument
@@ -792,8 +799,25 @@ int main (int argc, char *argv[])
   if (input && strcmp(input, "-") && !is_dir(input)) infile = input;
   buf = (char *)malloc(bufsize);
   if (buf == NULL) exit(1);
-  sockname = lookup_string(NULL, "socketfile");
-  if (!sockname) sockname = "/tmp/es.socket";
+  if (!context || strlen(context) == 0)
+  {
+	sockname = lookup_string(NULL, "socketfile");
+	if (!sockname) sockname = "/tmp/es.socket";
+  }
+  else
+  {
+	if (snprintf(buf, bufsize, "/tmp/es_%s.socket", context) >= bufsize)
+	{
+	  perror("Context argument too long.");
+	  exit(1);
+	}
+	sockname = strdup(buf);
+	if (!sockname)
+	{
+	  perror("Could not allocate space");
+	  exit(1);
+	}
+  }
   local_fd = sockconnect(sockname);
 
   if(daemon_only)
@@ -837,7 +861,7 @@ int main (int argc, char *argv[])
     exit(1);
   }
   /* The following line doesn't seem to work.  Why not? */
-  fchmod(sock, 0666);
+  chmod(sockname, 0666);
   es_log(1, "Socket initialized");
   signal(SIGINT, finish);
   signal(SIGTERM, finish);
