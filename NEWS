@@ -1,0 +1,25 @@
+2006-05-12:
+More sensible behaviour for both OSS and Alsa in case of audio problems.
+
+2006-02-17: 
+
+* Works more reliably with flite version that uses alsa for audio
+playback. Alsa has some advantages over OSS:
+  You can now have auditory icons in emacspeak:
+
+	  (setq emacspeak-play-program "aplay")
+	  (setq emacspeak-auditory-icon-function 'emacspeak-play-auditory-icon)
+	  (emacspeak-toggle-auditory-icons t)
+
+  With alsa, multiple programs can access the sound device
+  simultaneously,  so you can play an mp3 file while eflite is talking.
+
+* For cases where the user wants to read a long piece of thext from
+ top to bottom, memory usage has been drastically reduced.
+
+* New command line  option "-c context_name".
+ Allows for multiple instances of eflite that do
+  not interfere with each other. Useful for testing eflite without
+  losing speech.
+    Another idea: Important notifications could be issued in a
+  separate  context.

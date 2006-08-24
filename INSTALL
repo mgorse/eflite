@@ -10,6 +10,15 @@ and compile it.  You can get it from http://www.speech.cs.cmu.edu.
 Note that Eflite does not use the generated "flite" binary but instead
 links against the libraries.
 
+As of version 1.3 of flite, there is no support for audio playback via
+Alsa. There are 3rd party patches against flite 1.2 and 1.3 that add
+Alsa support: They are available from:
+
+http://homepage.hispeed.ch/loehrer/flite_alsa.html
+
+eflite uses flite for audio playback, thus you will need those patches
+if you intend to use eflite with Alsa.
+
 === 2. Compiling EFlite ===
 If you have checked EFlite out from cvs, then you will first need to generate
 the configure script from the configure.in file.  Do this by running autoconf.
@@ -19,6 +28,9 @@ the location of your FLite libraries.  If it guesses incorrectly or does not
 succeed at finding them, then you will need to specify the directory with a
 command similar to the following:
 ./configure flite_dir=/usr/src/flite-1.1-release
+
+To select the type of audio playback, specify either
+--with-audio=oss or --with-audio=alsa as options to configure.
 
 Once a Makefile has been created, run make.  Assuming all goes well, you
 should get a binary called eflite.  You may then run "make install" to

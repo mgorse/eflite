@@ -27,7 +27,19 @@ Eflite takes the following options:
 -D: Run as a daemon and exit; do not read from stdin
 -d: enable debugging message
 -fi <filename>: read input from <filename>
+-c <context>: Attach to eflite server for the given context  (create it
+              if it does not exist yet)	   
 -v: print version and exit
+
+The "-c" option can be useful when testing new versions of eflite. You
+do not want to lose speech with your "good" version while performing
+the test. You would start your test version like this:
+
+./eflite -c test
+
+If the test version crashes, your old working version will not be
+affected. You may also use this option to for example run emacspeak
+and yasr in different contexts.
 
 Send flames, bug reports, etc. to mgorse@alum.wpi.edu.  You can also
 catch me on #blinux on openprojects, as "vortex"
