@@ -60,6 +60,8 @@ punct_all: List of punctuation characters to be spoken
 when the punctuation mode is set to "all."  Default is
 !@#$%^&*()-=_+[]\|{};':",./<>?
 
+speech_volume: Volume of speech unless overridden by a client.  Default is 1000.
+
 tone_volume: Volume of generated tones (0-32767).  Default is 8192.
 
 speaker_tones: Allow tones from the PC speaker, if supported.  1 enables;

@@ -1,4 +1,17 @@
-2006-05-24 Michael P. Gorse <mgorse@alum.wpi.edu>
+2006-08-30 Michael P. Gorse <mgorse@alum.wpi.edu>
+
+	* es.c, INSTALL: Add speech_volume
+
+2006-08-25 Michael P. Gorse <mgorse@alum.wpi.edu>
+
+	* es.c: Fix version number.
+
+2006-08-24 Michael P. Gorse <mgorse@alum.wpi.edu>
+
+	* Makefile.in: Add AUTHORS and CREDITS to DISTFILES.
+	* CREDITS: Added.
+
+2006-08-24 Michael P. Gorse <mgorse@alum.wpi.edu>
 
 	* Release v0.4.0
 	* soccon.c, sockopen.c: add support for tcp connections

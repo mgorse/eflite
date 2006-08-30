@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c 29 2006-05-28 11:02:39Z luke $
+ * $Id: es.c,v 1.24 2006/08/24 11:19:03 mgorse Exp $
  */
 
 #define _GNU_SOURCE
@@ -788,7 +788,7 @@ int main (int argc, char *argv[])
 	  context = optarg;
 	  break;
 	case 'v':
-	  printf("Eflite ll20060528\n");
+	  printf("Eflite 0.4.0\n");
 	  exit(0);
 	default: more_opts = 0;
 	}
@@ -879,6 +879,7 @@ int main (int argc, char *argv[])
   if (!debug) daemon(0, 0);
 #endif
   for (i = 0; i < NPARAMS; i++) lang->synth->get_param(lang->synth, i, &default_param[i]);
+  default_param[S_VOLUME] = lookup_int("speech_volume", default_param[S_VOLUME]);
 
   for (;;)
   {
