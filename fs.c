@@ -9,7 +9,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c 27 2006-05-10 14:13:25Z luke $
+ * $Id: fs.c,v 1.16 2006/08/24 11:21:35 mgorse Exp $
  *
  * Notes:
  *
@@ -517,7 +517,7 @@ static inline void determine_playlen(int speed, cst_wave *wptr, int type, int *p
   int playlen, skip;
   if (type == SPEECH)
   {
-	skip = 1500000 / speed;
+	skip = (187 * wptr->sample_rate) / speed;
 	playlen = wptr->num_samples - (skip * 2);
 	if (playlen > 0 && playlen < 500) playlen += (skip * 2) / 3;
   }
@@ -607,7 +607,7 @@ es_log(2, "Cannot recover, exiting...");
 	es_log(2, "Flush took %.2f seconds.", get_ticks_count() - start_time);
     es_log(2, "play: Closing audio device");
 	close_audiodev();
-	pthread_cleanup_pop(0)
+	pthread_cleanup_pop(0);
 	  pthread_testcancel();
 	  TEXT_LOCK;
     time_left -= ((float)playlen) / wptr->sample_rate;
@@ -683,7 +683,7 @@ static void * synthesize(void * s)
 	/* Copy command into temporary buffer
 	 * so we can release the text mutex whilel
 	 * synthesizing the speech */
-	size_t command_length = strnlen(text + text_head, text_tail - text_head);
+	size_t command_length = strlen(text + text_head);
 	assert(command_length < text_tail - text_head);
 	char buf[command_length + 1];
 	strcpy(buf, text + text_head);
