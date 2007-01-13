@@ -39,7 +39,7 @@ fs.o: fs.c
 tone.o: tone.c
 	$(CC) $(CFLAGS) -I$(flite_include_dir) -DEFLITE -c -o $@ $<
 
-DISTFILES=es.c fs.c soccon.c sockopen.c tone.c es.h language.h lookup.h synthesizer.h configure configure.in Makefile.in COPYING ChangeLog INSTALL README eflite_test.txt
+DISTFILES=es.c fs.c soccon.c sockopen.c tone.c es.h language.h lookup.h synthesizer.h configure configure.in Makefile.in COPYING ChangeLog INSTALL AUTHORS CREDITS README eflite_test.txt
 release:
 	mkdir ../eflite-$(EFLITE_VERSION) && cp $(DISTFILES) ../eflite-$(EFLITE_VERSION) && tar --owner root --group root -C.. -czf eflite-$(EFLITE_VERSION).tar.gz $(addprefix eflite-$(EFLITE_VERSION)/,$(DISTFILES)) && rm -r ../eflite-$(EFLITE_VERSION)
 
