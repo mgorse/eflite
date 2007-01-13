@@ -9,7 +9,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.16 2006/08/24 11:21:35 mgorse Exp $
+ * $Id: fs.c,v 1.17 2007/01/13 00:38:34 mgorse Exp $
  *
  * Notes:
  *
@@ -775,7 +775,7 @@ static void add_command(struct synth_struct *s, int id, unsigned char *buffer)
   int len;
 
   assert(s->state->initialized);
-  len = strlen(buffer);
+  len = strlen((char *)buffer);
   if (text_thread_active)
   {
 	TEXT_LOCK_NI;
@@ -793,7 +793,7 @@ static void add_command(struct synth_struct *s, int id, unsigned char *buffer)
     }
   }
   text[text_tail++] = (char)id;
-  strcpy(text + text_tail, buffer);
+  strcpy(text + text_tail, (char *)buffer);
   text_tail += len + 1;
   /* The below line is important.  An extra \0 indicates to the synthesize
      thread that there is no more data. */
@@ -825,7 +825,7 @@ void add_tone_command(struct synth_struct *s, int freq, int dur, int vol)
   char buf[40];
 
   sprintf(buf, "%d %d %d", freq, dur, vol);
-  add_command(s, 2, buf);
+  add_command(s, 2, (unsigned char *)buf);
 }
 
 /*

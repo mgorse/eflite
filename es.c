@@ -1,5 +1,5 @@
 /* es.c - Generic code for creating an Emacspeak server
- * $Id: es.c,v 1.24 2006/08/24 11:19:03 mgorse Exp $
+ * $Id: es.c,v 1.25 2006/08/30 22:49:40 mgorse Exp $
  */
 
 #define _GNU_SOURCE
@@ -411,20 +411,20 @@ void es_addtext(CLIENT *client, char *buf)
     if (q - (unsigned char *)obuf > 896)
     {
       *q = 0;
-      lang->synth->synth(lang->synth, obuf);
-      q = obuf;
+      lang->synth->synth(lang->synth, (unsigned char *)obuf);
+      q = (unsigned char *)obuf;
     }
     if (!client->punct[(int)*p]) *q++ = *p;
     else
     {
       if (q > (unsigned char *)obuf && q[-1] != ' ') *q++ = ' ';
-      strcpy(q, ascii[(int)*p]);
+      strcpy((char *)q, ascii[(int)*p]);
       while (*q) q++;
       *q++ = ' ';
     }
   }
   *q = 0;
-  lang->synth->synth(lang->synth, obuf);
+  lang->synth->synth(lang->synth, (unsigned char *)obuf);
   text_buffered = 1;
 }
 
