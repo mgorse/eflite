@@ -9,7 +9,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.17 2007/01/13 00:38:34 mgorse Exp $
+ * $Id: fs.c,v 1.18 2007/01/13 00:42:31 mgorse Exp $
  *
  * Notes:
  *
@@ -273,10 +273,13 @@ void segfault(int sig)
 }
 
 #define MUTEX_UNLOCK(mutex) \
-  if (pthread_mutex_unlock(&mutex) != 0) \
+  { \
+int ret_;\
+  if ((ret_ = pthread_mutex_unlock(&mutex)) != 0) \
 {\
-  es_log(2, "%s: error unlocking mutex.", __func__); \
+  es_log(2, "%s: error unlocking mutex: %s", __func__, strerror(ret_)); \
   exit(3); \
+} \
 }
 #endif
 
@@ -433,7 +436,10 @@ static int s_close(synth_t *s)
 	{
 	  while(ac_tail >0)
 		usleep(100000);
+	  WAVE_LOCK_NI;
+	  pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting 
 	  pthread_cancel(wave_thread);
+	  WAVE_UNLOCK_NI;
 	  ret = pthread_join(wave_thread, NULL);
 	  assert(ret == 0);
 	}
@@ -552,11 +558,17 @@ static void * play(void *s)
   	ES_LOG_STATE("checking condition");
 	while (ac_head >= ac_synthpos)
 	{
+	  pthread_testcancel();
 	  es_log(2, "play: Going to sleep.");
+	  // Some versions of glibc and Linux do not like being cancelled
+	  // while waiting for a condition variable.
+	  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	  pthread_cond_wait(&wave_condition, &wave_mutex);
+	  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 	  ES_LOG_STATE("Woke up, checking condition");
 	}
 	es_log(2, "play: condition passed.");
+	pthread_testcancel();
 	wptr = ac[ac_head].data;
 	type = ac[ac_head].type;
 	WAVE_UNLOCK;
@@ -880,6 +892,7 @@ static int s_clear(synth_t *s)
     if (wave_thread_active)
   {
 	WAVE_LOCK_NI;
+	pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting
 	pthread_cancel(wave_thread);
 	WAVE_UNLOCK_NI;
   }
