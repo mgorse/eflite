@@ -1,3 +1,25 @@
+2007-01-18 Michael P. Gorse <mgorse@alum.wpi.edu>
+
+	* es.c: Update version number.
+
+	* Release v0.4.1
+
+2007-01-18 Lukas Loehrer <loehrerl@gmx.net>
+
+	* fs.c: Patch to avoid situations where a thread is canceled while
+	waiting for a condition variable; works around an apparent bug
+	in newer versions of linux/glibc.
+
+2007-01-12 Michael P. Gorse <mgorse@alum.wpi.edu>
+
+	* es.c, fs.c: fix compiler warnings
+	* fs.c: Make skip length dependent on speech rate
+
+2006-09-26 Deanna Phillips <deanna@sdf.lonestar.org>
+
+	* fs.c: Add missing semicolon
+	  Use strlen rather than strnlen; strnlen is not very portable
+
 2006-08-30 Michael P. Gorse <mgorse@alum.wpi.edu>
 
 	* es.c, INSTALL: Add speech_volume
