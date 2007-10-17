@@ -9,7 +9,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.18 2007/01/13 00:42:31 mgorse Exp $
+ * $Id: fs.c,v 1.19 2007/01/18 23:58:42 mgorse Exp $
  *
  * Notes:
  *
@@ -606,8 +606,8 @@ es_log(2, "Cannot recover, exiting...");
 #ifdef DEBUG
 	  start_time = get_ticks_count();
 #endif
-	  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
       audio_write(audiodev, wptr->samples + skip, playlen * 2);
+      pthread_testcancel();
 	  es_log(2, "Write took %.2f seconds.", get_ticks_count() - start_time);
 	}
     es_log(2, "play: syncing.");
@@ -894,6 +894,7 @@ static int s_clear(synth_t *s)
 	WAVE_LOCK_NI;
 	pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting
 	pthread_cancel(wave_thread);
+	audio_drain(audiodev);
 	WAVE_UNLOCK_NI;
   }
 

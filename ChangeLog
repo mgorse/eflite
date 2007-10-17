@@ -1,3 +1,8 @@
+2007-10-17 Michael P. Gorse <mgorse@alum.wpi.edu>
+
+	* es.c: Update verison number.
+	* fs.c: AvoAvoid canceling thread during audio_write
+
 2007-01-18 Michael P. Gorse <mgorse@alum.wpi.edu>
 
 	* es.c: Update version number.
