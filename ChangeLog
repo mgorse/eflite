@@ -1,3 +1,8 @@
+2008-03-05 Lukas Loehrer <loehrerl@gmx.net>
+
+	* fs.c: Close the audio device in s_clear rather than in the cleanup
+	handler; avoids a potential race
+
 2008-03-05 Michael P. Gorse <mgorse@alum.wpi.edu>
 
 	* fs.c: Only drain audiodev if not NULL
