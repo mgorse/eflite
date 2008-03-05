@@ -1,7 +1,11 @@
+2008-03-05 Michael P. Gorse <mgorse@alum.wpi.edu>
+
+	* fs.c: Only drain audiodev if not NULL
+
 2007-10-17 Michael P. Gorse <mgorse@alum.wpi.edu>
 
-	* es.c: Update verison number.
-	* fs.c: AvoAvoid canceling thread during audio_write
+	* es.c: Update version number.
+	* fs.c: Avoid canceling thread during audio_write
 
 2007-01-18 Michael P. Gorse <mgorse@alum.wpi.edu>
 

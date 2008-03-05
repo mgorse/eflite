@@ -9,7 +9,7 @@
  * GNU General Public License, as published by the Free Software
  * Foundation.  Please see the file COPYING for details.
  *
- * $Id: fs.c,v 1.19 2007/01/18 23:58:42 mgorse Exp $
+ * $Id: fs.c,v 1.20 2007/10/17 23:20:44 mgorse Exp $
  *
  * Notes:
  *
@@ -894,7 +894,7 @@ static int s_clear(synth_t *s)
 	WAVE_LOCK_NI;
 	pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting
 	pthread_cancel(wave_thread);
-	audio_drain(audiodev);
+	if (audiodev) audio_drain(audiodev);
 	WAVE_UNLOCK_NI;
   }
 
