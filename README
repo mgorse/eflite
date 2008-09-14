@@ -26,7 +26,7 @@ but I am not sure one way or the other.
 Eflite takes the following options:
 -D: Run as a daemon and exit; do not read from stdin
 -d: enable debugging message
--fi <filename>: read input from <filename>
+-f <filename>: read input from <filename>
 -c <context>: Attach to eflite server for the given context  (create it
               if it does not exist yet)	   
 -v: print version and exit
