@@ -593,7 +593,8 @@ es_log(2, "Cannot recover, exiting...");
 #ifdef DEBUG
 	  start_time = get_ticks_count();
 #endif
-      audio_write(audiodev, wptr->samples + skip, playlen * 2);
+      if (audiodev)
+        audio_write(audiodev, wptr->samples + skip, playlen * 2);
       pthread_testcancel();
 	  es_log(2, "Write took %.2f seconds.", get_ticks_count() - start_time);
 	}
@@ -601,7 +602,8 @@ es_log(2, "Cannot recover, exiting...");
 #ifdef DEBUG
 	start_time = get_ticks_count();
 #endif
-    audio_flush(audiodev);
+    if (audiodev)
+        audio_flush(audiodev);
 	pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 	es_log(2, "Flush took %.2f seconds.", get_ticks_count() - start_time);
     	pthread_testcancel();
