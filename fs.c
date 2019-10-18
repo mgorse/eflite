@@ -78,8 +78,8 @@
 #ifndef STANDALONE
 #include <dlfcn.h>
 #endif
-#include "flite.h"
-#include "flite_version.h"
+#include "flite/flite.h"
+#include "flite/flite_version.h"
 
 #include "synthesizer.h"
 #include "es.h"

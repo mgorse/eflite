@@ -4,12 +4,10 @@
 # Do not hand edit.
 
 CC       = @CC@
-AUDIODEFS = @AUDIODEFS@
 CFLAGS   = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 DEFS     = @DEFS@
 LIBS = @LIBS@
-
 AUDIOLIBS   = @AUDIOLIBS@
 
 FL_LANG  = @FL_LANG@
@@ -21,23 +19,20 @@ prefix        = @prefix@
 EXEEXT	      = @EXEEXT@
 INSTALLBINDIR = @bindir@
 INSTALLLIBDIR = @libdir@
-INSTALLINCDIR = @includedir@/flite
-flite_dir:=@flite_dir@
-flite_include_dir:=@flite_include_dir@
 
 #CFLAGS+= -DDEBUG=2
 
 # For making releases
-FLITE_LIBS:=-L$(flite_dir)/lib -lflite_$(FL_VOX) -lflite_$(FL_LEX) -lflite_$(FL_LANG) -lflite
+FLITE_LIBS:=-lflite_$(FL_VOX) -lflite_$(FL_LEX) -lflite_$(FL_LANG) -lflite
 
 eflite: fs.o es.o soccon.o sockopen.o tone.o
 	$(CC) $(LDFLAGS) -o $@ $^ -lm $(LIBS) $(FLITE_LIBS) $(AUDIOLIBS)
 
 fs.o: fs.c
-	$(CC) $(CFLAGS) @AUDIODEFS@ -I. -I$(flite_include_dir) -DREGISTER_VOX=register_$(subst cmu_us_kal16,cmu_us_kal,$(FL_VOX)) -DSTANDALONE -DEFLITE -c -o $@ $<
+	$(CC) $(CFLAGS) -I. -DREGISTER_VOX=register_$(FL_VOX) -DSTANDALONE -DEFLITE -c -o $@ $<
 
 tone.o: tone.c
-	$(CC) $(CFLAGS) -I$(flite_include_dir) -DEFLITE -c -o $@ $<
+	$(CC) $(CFLAGS) -DEFLITE -c -o $@ $<
 
 DISTFILES=es.c fs.c soccon.c sockopen.c tone.c es.h language.h lookup.h synthesizer.h configure configure.in Makefile.in COPYING ChangeLog INSTALL AUTHORS CREDITS README eflite_test.txt
 release:

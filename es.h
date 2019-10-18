@@ -28,7 +28,7 @@ void es_log(int flags, const char *text, ...);
 #endif
 
 #ifdef EFLITE
-#include "flite.h"
+#include "flite/flite.h"
 /* fs.c */
 void add_tone_command(struct synth_struct *s, int freq, int dur, int vol);
 #endif
