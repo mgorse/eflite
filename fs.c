@@ -511,7 +511,7 @@ static inline void determine_playlen(int speed, cst_wave *wptr, int type, int *p
   if (type == SPEECH)
   {
 	skip = (187 * wptr->sample_rate) / speed;
-	playlen = wptr->num_samples - (skip * 2);
+	playlen = wptr->num_samples - skip;
 	if (playlen > 0 && playlen < 500) playlen += (skip * 2) / 3;
   }
   else
