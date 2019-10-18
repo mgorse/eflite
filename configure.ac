@@ -77,7 +77,7 @@ AC_SUBST(FL_LANG)
 AC_ARG_WITH( vox, [  --with-vox            with vox ],
         FL_VOX=$with_vox )
 if test "x$with_vox" = "x"; then
-        FL_VOX="cmu_us_kal"
+        FL_VOX="cmu_us_kal16"
 fi
 AC_SUBST(FL_VOX)
 
