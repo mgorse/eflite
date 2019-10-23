@@ -572,8 +572,8 @@ static void * play(void *s)
     WAVE_UNLOCK;
     
     es_log(2, "Opening audio device.");
-    assert(audiodev == NULL);
-    audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
+    if (!audiodev)
+      audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
     if (audiodev == NULL)
     {
       es_log(2, "Failed to open audio device.");
