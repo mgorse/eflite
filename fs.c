@@ -526,6 +526,13 @@ static inline void determine_playlen(int speed, cst_wave *wptr, int type, int *p
   *s = skip;
 }
 
+static void
+wave_canceled (void *arg)
+{
+  audio_drain (audiodev);
+  close_audiodev ();
+}
+
 static void * play(void *s)
 {
   int playlen;
@@ -549,6 +556,7 @@ static void * play(void *s)
 	while (ac_head >= ac_synthpos && !wave_thread_cancel)
 	{
 	  es_log(2, "play: Going to sleep.");
+	  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	  pthread_cond_wait(&wave_condition, &wave_mutex);
 	  ES_LOG_STATE("Woke up, checking condition");
 	}
@@ -610,7 +618,11 @@ es_log(2, "Cannot recover, exiting...");
 #ifdef DEBUG
 	start_time = get_ticks_count();
 #endif
+    pthread_cleanup_push (wave_canceled, NULL);
+	  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     audio_flush(audiodev);
+	  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_cleanup_pop (0);
 	es_log(2, "Flush took %.2f seconds.", get_ticks_count() - start_time);
 
 	TEXT_LOCK;
@@ -887,6 +899,9 @@ static int s_clear(synth_t *s)
     if (wave_thread_active)
   {
     wave_thread_cancel = 1;
+#ifdef DO_WAVE_CANCEL
+-	pthread_cancel(wave_thread);
+#endif
 	pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting
   }
 

@@ -21,6 +21,7 @@ INSTALLBINDIR = @bindir@
 INSTALLLIBDIR = @libdir@
 
 #CFLAGS+= -DDEBUG=2
+#CFLAGS+= -DDO_WAVE_CANCEL
 
 # For making releases
 FLITE_LIBS:=-lflite_$(FL_VOX) -lflite_$(FL_LEX) -lflite_$(FL_LANG) -lflite
