@@ -74,6 +74,9 @@
 #include <assert.h>
 #include <math.h>
 
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 #ifndef STANDALONE
 #include <dlfcn.h>
@@ -157,6 +160,7 @@ static cst_voice *v = NULL;
 /* Wave thread specific variables */
 static pthread_t wave_thread;
 static int wave_thread_active;
+static volatile int wave_thread_cancel = 0;
 static pthread_mutex_t wave_mutex;
 static pthread_cond_t wave_condition;
 /* Wave buffer */
@@ -170,7 +174,7 @@ static float time_left = 0;
 /* Text thread and data structures */
 static pthread_t text_thread;
 static int text_thread_active;
-static int text_thread_cancel;
+static volatile int text_thread_cancel = 0;
 static pthread_mutex_t text_mutex;
 static pthread_cond_t text_condition;
 /* Text buffer */
@@ -257,8 +261,8 @@ void segfault(int sig)
 
 
 #define ES_LOG_STATE(label) \
-  es_log(2, "%s: %s. ac_head=%d ac_synthpos=%d ac_tail=%d text_head=%d text_synthpos=%d text_tail=%d time_left=%.2f", __func__, label, \
-    ac_head, ac_synthpos, ac_tail, text_head, text_synthpos, text_tail, time_left);
+  es_log(2, "%s: %s. ac_head=%d ac_synthpos=%d ac_tail=%d text_head=%d text_synthpos=%d text_tail=%d time_left=%.2f wave_thread_cancel=%d", __func__, label, \
+    ac_head, ac_synthpos, ac_tail, text_head, text_synthpos, text_tail, time_left, wave_thread_cancel);
 
 /* Helper functions and macros for managing mutexes */
 #ifndef DEBUG
@@ -293,15 +297,12 @@ static void wave_unlock(void *function_name)
 #define WAVE_UNLOCK \
   es_log(2, "%s: unlocking wave mutex", __func__); \
   MUTEX_UNLOCK(wave_mutex); \
-  pthread_cleanup_pop(0); \
   es_log(2, "%s: unlocked wave mutex", __func__);
 
 #define WAVE_LOCK \
   es_log(2, "%s: locking wave mutex", __func__); \
-  pthread_cleanup_push(wave_unlock, (void *) __func__); \
   MUTEX_LOCK(wave_mutex); \
-  es_log(2, "%s: got wave mutex", __func__); \
-  pthread_testcancel();
+  es_log(2, "%s: got wave mutex", __func__);
 
 
 static void text_unlock(void *function_name)
@@ -535,6 +536,8 @@ static void * play(void *s)
 #ifdef DEBUG
   double start_time;
 #endif
+  short *start, *end;
+  size_t len;
 
   ES_LOG_STATE("Entering main loop");
   while (1)
@@ -543,31 +546,26 @@ static void * play(void *s)
 	WAVE_LOCK;
 	/* Wait for new wave data to arrive */
   	ES_LOG_STATE("checking condition");
-	while (ac_head >= ac_synthpos)
+	while (ac_head >= ac_synthpos && !wave_thread_cancel)
 	{
-	  pthread_testcancel();
 	  es_log(2, "play: Going to sleep.");
-	  // Some versions of glibc and Linux do not like being cancelled
-	  // while waiting for a condition variable.
-	  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	  pthread_cond_wait(&wave_condition, &wave_mutex);
-	  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 	  ES_LOG_STATE("Woke up, checking condition");
 	}
+    if (wave_thread_cancel)
+    {
+      es_log (2, "canceling wave thread");
+      wave_unlock ((void *)__func__);
+      return NULL;
+    }
 	es_log(2, "play: condition passed.");
-	pthread_testcancel();
 	wptr = ac[ac_head].data;
 	type = ac[ac_head].type;
 	WAVE_UNLOCK;
-	pthread_testcancel();
 	
 	es_log(2, "Opening audio device.");
-	/* We abuse the wave mutex here to avoid being canceled
-	 * while the audio device is being openned */
-	WAVE_LOCK;
 	assert(audiodev == NULL);
 	audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
-	WAVE_UNLOCK;
 	if (audiodev == NULL)
 	{
 	  es_log(2, "Failed to open audio device.");
@@ -588,25 +586,32 @@ es_log(2, "Cannot recover, exiting...");
     {
       if (sparam[S_VOLUME] != 1000)
 		cst_wave_rescale(wptr, (sparam[S_VOLUME] << 16) / 1000);
-      pthread_testcancel();
 	  es_log(2, "play: Writing to audio device.");
 #ifdef DEBUG
 	  start_time = get_ticks_count();
 #endif
-      if (audiodev)
-        audio_write(audiodev, wptr->samples + skip, playlen * 2);
-      pthread_testcancel();
+      start = wptr->samples + skip;
+      end = start + playlen;
+      while (start < end)
+      {
+        len = MIN(256, end - start);
+        audio_write(audiodev, start, len * 2);
+        start += len;
+        if (wave_thread_cancel)
+        {
+      audio_drain (audiodev);
+          close_audiodev ();
+          return NULL;
+        }
+      }
 	  es_log(2, "Write took %.2f seconds.", get_ticks_count() - start_time);
 	}
     es_log(2, "play: syncing.");
 #ifdef DEBUG
 	start_time = get_ticks_count();
 #endif
-    if (audiodev)
-        audio_flush(audiodev);
-	pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+    audio_flush(audiodev);
 	es_log(2, "Flush took %.2f seconds.", get_ticks_count() - start_time);
-    	pthread_testcancel();
 
 	TEXT_LOCK;
     time_left -= ((float)playlen) / wptr->sample_rate;
@@ -635,6 +640,7 @@ es_log(2, "Cannot recover, exiting...");
 	WAVE_UNLOCK;
   	ES_LOG_STATE("After playing");
   }
+  return NULL;
 }
 
 /* Pause speech synthesis if there is more that */
@@ -880,11 +886,8 @@ static int s_clear(synth_t *s)
 
     if (wave_thread_active)
   {
-	WAVE_LOCK_NI;
+    wave_thread_cancel = 1;
 	pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting
-	pthread_cancel(wave_thread);
-	if (audiodev != NULL) audio_drain(audiodev);
-	WAVE_UNLOCK_NI;
   }
 
   if (text_thread_active)
@@ -908,9 +911,6 @@ static int s_clear(synth_t *s)
 	
   /* At this point, no thread is running */
 
-  // Make sure audio device is closed
-  close_audiodev();
-
   /* Free any wave data */
   es_log(2, "s_clear: freeing wave data: %d", ac_tail);
   for (i = 0; i < ac_tail; i++)
@@ -922,7 +922,7 @@ static int s_clear(synth_t *s)
   reset_text_buffer();
   reset_wave_buffer();
   text_thread_active = wave_thread_active = 0;
-  text_thread_cancel = 0;
+  text_thread_cancel = wave_thread_cancel = 0;
 
     /* XXX: The following code should not be necessary However, on kernel
    * 2.6, the condition variable would sometimes get corrupted and
