@@ -70,7 +70,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <pthread.h>
-#include <signal.h>	/* tmp. for dbg. */
+#include <signal.h> /* tmp. for dbg. */
 #include <assert.h>
 #include <math.h>
 
@@ -123,7 +123,7 @@ static synth_t state[] = {
     }, {
         &private_state[1],
         &languages[LANG_GERMAN],
-        "FLite/German",	/* not supported */
+        "FLite/German", /* not supported */
         NULL,
         s_close,
         s_synth,
@@ -149,9 +149,9 @@ typedef struct
   void *data;
 } AUDIO_COMMAND;
 
-#if 0	/* tbd - figure out what these variables are supposed to be used for */
-/*static int sync_mark_no = 0;*/	/* currently used number */
-/*static struct timeval mark;*/	/* time the mark has been set */
+#if 0   /* tbd - figure out what these variables are supposed to be used for */
+/*static int sync_mark_no = 0;*/    /* currently used number */
+/*static struct timeval mark;*/ /* time the mark has been set */
 #endif
 
 /* server-specific variables */
@@ -167,7 +167,7 @@ static pthread_cond_t wave_condition;
 static AUDIO_COMMAND *ac;
 static int ac_size;
 static int ac_head, ac_tail;
-static int ac_synthpos;	/* largest index to play + 1 */
+static int ac_synthpos; /* largest index to play + 1 */
 static float time_left = 0;
 /* number of seconds of wave data in wave buffer */
 
@@ -181,10 +181,10 @@ static pthread_cond_t text_condition;
 static char *text;
 static int text_size;
 static int text_head, text_tail;
-static int text_synthpos;	/* pointer to beyond last piece to be played */
+static int text_synthpos;   /* pointer to beyond last piece to be played */
 
-cst_audiodev *audiodev = NULL;	/* Sound device */
-static pthread_attr_t ta;	/* for creating threads */
+cst_audiodev *audiodev = NULL;  /* Sound device */
+static pthread_attr_t ta;   /* for creating threads */
 static pthread_mutexattr_t mt_attr; /* For creating mutexes */
 
 extern cst_voice *REGISTER_VOX(const char *voxdir);
@@ -353,56 +353,56 @@ synth_t *synth_open(void *context, lookup_string_t lookup)
 
   debug_fp = stderr;
   if (language == NULL) {
-	language = "english";
+    language = "english";
   }
   if (ref_count == 0) {
-	unlink("log");
+    unlink("log");
 
 #ifdef DEBUG
-	signal(SIGSEGV, segfault);
+    signal(SIGSEGV, segfault);
 #endif
-	flite_init();
-	v = REGISTER_VOX(NULL);
-	/* We want our threads to be joinable */
-	pthread_attr_init(&ta);
-	pthread_mutexattr_init(&mt_attr);
+    flite_init();
+    v = REGISTER_VOX(NULL);
+    /* We want our threads to be joinable */
+    pthread_attr_init(&ta);
+    pthread_mutexattr_init(&mt_attr);
 #ifdef DEBUG
-	pthread_mutexattr_settype(&mt_attr, PTHREAD_MUTEX_ERRORCHECK_NP);
+    pthread_mutexattr_settype(&mt_attr, PTHREAD_MUTEX_ERRORCHECK_NP);
 #endif
-	pthread_mutex_init(&text_mutex, &mt_attr);
-	pthread_cond_init(&text_condition, NULL);
-	text_thread_active = 0;
-	text_thread_cancel = 0;
-	text_size = 4096;
-	text = (char *)malloc(text_size);
-	text_head = text_tail = text_synthpos = 0;
-	wave_thread_active = 0;
-	ac_size = 64;
-	ac = (AUDIO_COMMAND *)malloc(ac_size * sizeof(AUDIO_COMMAND));
-	ac_head = ac_tail = ac_synthpos = 0;
-	if (!ac || !text) return NULL;
-	pthread_mutex_init(&wave_mutex, &mt_attr);
-	pthread_cond_init(&wave_condition, NULL);
-	time_left = 0;
+    pthread_mutex_init(&text_mutex, &mt_attr);
+    pthread_cond_init(&text_condition, NULL);
+    text_thread_active = 0;
+    text_thread_cancel = 0;
+    text_size = 4096;
+    text = (char *)malloc(text_size);
+    text_head = text_tail = text_synthpos = 0;
+    wave_thread_active = 0;
+    ac_size = 64;
+    ac = (AUDIO_COMMAND *)malloc(ac_size * sizeof(AUDIO_COMMAND));
+    ac_head = ac_tail = ac_synthpos = 0;
+    if (!ac || !text) return NULL;
+    pthread_mutex_init(&wave_mutex, &mt_attr);
+    pthread_cond_init(&wave_condition, NULL);
+    time_left = 0;
   }
   ref_count++;
 
   if (!strcasecmp(language, "english")) {
-	langi = 0;
-	s = &state[langi];
+    langi = 0;
+    s = &state[langi];
   } else if (!strcasecmp(language, "german")) {
-	langi = 1;
-	s = &state[langi];
+    langi = 1;
+    s = &state[langi];
   } else {
-	langi = -1;
-	s = NULL;
+    langi = -1;
+    s = NULL;
   }
 
   if (s != NULL && !s->state->initialized) {
-	s->state->param[S_SPEED]  = 1000;
-	s->state->param[S_PITCH]  = 1000;
-	s->state->param[S_VOLUME] = 1000;
-	s->state->initialized = 1;
+    s->state->param[S_SPEED]  = 1000;
+    s->state->param[S_PITCH]  = 1000;
+    s->state->param[S_VOLUME] = 1000;
+    s->state->initialized = 1;
   }
 
   return s;
@@ -420,35 +420,35 @@ static int s_close(synth_t *s)
   ref_count--;
   if (ref_count == 0)
   {
-	int ret;
-	/* Wait for any speech to be spoken */
-	if (text_thread_active)
-	{
-	  while (text_tail > 0)
-		usleep(100000);
-	  TEXT_LOCK_NI;
-	  text_thread_cancel = 1;
-	  pthread_cond_signal(&text_condition);
-	  TEXT_UNLOCK_NI;
-	  ret = pthread_join(text_thread, NULL);
-	  assert(ret == 0);
-	}
-	if (wave_thread_active)
-	{
-	  while(ac_tail >0)
-		usleep(100000);
-	  WAVE_LOCK_NI;
-	  pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting 
-	  pthread_cancel(wave_thread);
-	  WAVE_UNLOCK_NI;
-	  ret = pthread_join(wave_thread, NULL);
-	  assert(ret == 0);
-	}
-	  
-	if (text) free(text);
-	if (ac) free(ac);
-	text =NULL;
-	ac = NULL;
+    int ret;
+    /* Wait for any speech to be spoken */
+    if (text_thread_active)
+    {
+      while (text_tail > 0)
+        usleep(100000);
+      TEXT_LOCK_NI;
+      text_thread_cancel = 1;
+      pthread_cond_signal(&text_condition);
+      TEXT_UNLOCK_NI;
+      ret = pthread_join(text_thread, NULL);
+      assert(ret == 0);
+    }
+    if (wave_thread_active)
+    {
+      while(ac_tail >0)
+        usleep(100000);
+      WAVE_LOCK_NI;
+      pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting 
+      pthread_cancel(wave_thread);
+      WAVE_UNLOCK_NI;
+      ret = pthread_join(wave_thread, NULL);
+      assert(ret == 0);
+    }
+      
+    if (text) free(text);
+    if (ac) free(ac);
+    text =NULL;
+    ac = NULL;
   }
 
   return 0;
@@ -467,13 +467,13 @@ static void verify_language(struct synth_struct *s)
 
     if (s->lang->lang == LANG_BRITISH_ENGLISH
         && current_language != LANG_BRITISH_ENGLISH) {
-	/* tbd */
+    /* tbd */
     } else if (s->lang->lang == LANG_GERMAN &&
                current_language != LANG_GERMAN) {
-	/* tbd */
+    /* tbd */
     }
     if (value != -1) {
-	/* tbd */
+    /* tbd */
     }
 }
 
@@ -511,14 +511,14 @@ static inline void determine_playlen(int speed, cst_wave *wptr, int type, int *p
   int playlen, skip;
   if (type == SPEECH)
   {
-	skip = (187 * wptr->sample_rate) / speed;
-	playlen = wptr->num_samples - skip;
-	if (playlen > 0 && playlen < 500) playlen += (skip * 2) / 3;
+    skip = (187 * wptr->sample_rate) / speed;
+    playlen = wptr->num_samples - skip;
+    if (playlen > 0 && playlen < 500) playlen += (skip * 2) / 3;
   }
   else
   {
-	skip = 0;
-	playlen = wptr->num_samples;
+    skip = 0;
+    playlen = wptr->num_samples;
   }
   if (playlen < 0) playlen = 0;
 
@@ -549,54 +549,54 @@ static void * play(void *s)
   ES_LOG_STATE("Entering main loop");
   while (1)
   {
-	es_log(2, "play: beginning of main loop");
-	WAVE_LOCK;
-	/* Wait for new wave data to arrive */
-  	ES_LOG_STATE("checking condition");
-	while (ac_head >= ac_synthpos && !wave_thread_cancel)
-	{
-	  es_log(2, "play: Going to sleep.");
-	  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	  pthread_cond_wait(&wave_condition, &wave_mutex);
-	  ES_LOG_STATE("Woke up, checking condition");
-	}
+    es_log(2, "play: beginning of main loop");
+    WAVE_LOCK;
+    /* Wait for new wave data to arrive */
+    ES_LOG_STATE("checking condition");
+    while (ac_head >= ac_synthpos && !wave_thread_cancel)
+    {
+      es_log(2, "play: Going to sleep.");
+      pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+      pthread_cond_wait(&wave_condition, &wave_mutex);
+      ES_LOG_STATE("Woke up, checking condition");
+    }
     if (wave_thread_cancel)
     {
       es_log (2, "canceling wave thread");
       wave_unlock ((void *)__func__);
       return NULL;
     }
-	es_log(2, "play: condition passed.");
-	wptr = ac[ac_head].data;
-	type = ac[ac_head].type;
-	WAVE_UNLOCK;
-	
-	es_log(2, "Opening audio device.");
-	assert(audiodev == NULL);
-	audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
-	if (audiodev == NULL)
-	{
-	  es_log(2, "Failed to open audio device.");
+    es_log(2, "play: condition passed.");
+    wptr = ac[ac_head].data;
+    type = ac[ac_head].type;
+    WAVE_UNLOCK;
+    
+    es_log(2, "Opening audio device.");
+    assert(audiodev == NULL);
+    audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
+    if (audiodev == NULL)
+    {
+      es_log(2, "Failed to open audio device.");
 #ifdef CST_AUDIO_OSS
-	  if (errno == -EBUSY)
-	  {
-		es_log(2, "Device was busy, trying again later..");
-		usleep(1000000;
-		continue;
-	  }
+      if (errno == -EBUSY)
+      {
+        es_log(2, "Device was busy, trying again later..");
+        usleep(1000000;
+        continue;
+      }
 #endif
 es_log(2, "Cannot recover, exiting...");
-	  exit(1);
-	}
-	determine_playlen(sparam[S_SPEED], wptr, type, &playlen, &skip);
+      exit(1);
+    }
+    determine_playlen(sparam[S_SPEED], wptr, type, &playlen, &skip);
     es_log(2, "play: wave=%p, samples=%p, num_samples=%d skip=%d playlen=%d", wptr, wptr->samples, wptr->num_samples, skip, playlen);
     if (playlen > 0)
     {
       if (sparam[S_VOLUME] != 1000)
-		cst_wave_rescale(wptr, (sparam[S_VOLUME] << 16) / 1000);
-	  es_log(2, "play: Writing to audio device.");
+        cst_wave_rescale(wptr, (sparam[S_VOLUME] << 16) / 1000);
+      es_log(2, "play: Writing to audio device.");
 #ifdef DEBUG
-	  start_time = get_ticks_count();
+      start_time = get_ticks_count();
 #endif
       start = wptr->samples + skip;
       end = start + playlen;
@@ -612,45 +612,45 @@ es_log(2, "Cannot recover, exiting...");
           return NULL;
         }
       }
-	  es_log(2, "Write took %.2f seconds.", get_ticks_count() - start_time);
-	}
+      es_log(2, "Write took %.2f seconds.", get_ticks_count() - start_time);
+    }
     es_log(2, "play: syncing.");
 #ifdef DEBUG
-	start_time = get_ticks_count();
+    start_time = get_ticks_count();
 #endif
     pthread_cleanup_push (wave_canceled, NULL);
-	  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     audio_flush(audiodev);
-	  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+      pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     pthread_cleanup_pop (0);
-	es_log(2, "Flush took %.2f seconds.", get_ticks_count() - start_time);
+    es_log(2, "Flush took %.2f seconds.", get_ticks_count() - start_time);
 
-	TEXT_LOCK;
+    TEXT_LOCK;
     time_left -= ((float)playlen) / wptr->sample_rate;
-	pthread_cond_signal(&text_condition);
-	TEXT_UNLOCK;
+    pthread_cond_signal(&text_condition);
+    TEXT_UNLOCK;
 
-	WAVE_LOCK;
-	es_log(2, "play: Closing audio device");
-	close_audiodev();
+    WAVE_LOCK;
+    es_log(2, "play: Closing audio device");
+    close_audiodev();
     ac_destroy(&ac[ac_head]);
-	ac_head++;
-	if (ac_head == ac_tail)
-	{
-	  reset_wave_buffer();
-	}
+    ac_head++;
+    if (ac_head == ac_tail)
+    {
+      reset_wave_buffer();
+    }
     else if (ac_head > (ac_size >> 1))
     {
       es_log(1, "play: compacting wave pointersac_head=%d ac_synthpos=%d ac_tail=%d ac_size=%d", ac_head,ac_synthpos,  ac_tail, ac_size);
       memmove(ac, ac + ac_head, (ac_tail - ac_head) * sizeof(AUDIO_COMMAND));
-	  /* The following line is not really necessary */
-	  /* memset(ac + ac_tail, '\0', (ac_size - ac_tail) * sizeof(AUDIO_COMMAND));*/
+      /* The following line is not really necessary */
+      /* memset(ac + ac_tail, '\0', (ac_size - ac_tail) * sizeof(AUDIO_COMMAND));*/
       ac_tail -= ac_head;
       if (ac_synthpos > 0) ac_synthpos -= ac_head;
       ac_head = 0;
     }
-	WAVE_UNLOCK;
-  	ES_LOG_STATE("After playing");
+    WAVE_UNLOCK;
+    ES_LOG_STATE("After playing");
   }
   return NULL;
 }
@@ -664,10 +664,10 @@ static inline void text_thread_testcancel()
 {
   if (text_thread_cancel)
   {
-	MUTEX_UNLOCK(text_mutex);
-	text_thread_cancel = 0;
-	es_log(2, "Text thread cancelled, exiting.");
-	pthread_exit(0);
+    MUTEX_UNLOCK(text_mutex);
+    text_thread_cancel = 0;
+    es_log(2, "Text thread cancelled, exiting.");
+    pthread_exit(0);
   }
 }
 
@@ -680,104 +680,104 @@ static void * synthesize(void * s)
   ES_LOG_STATE("entering main loop");
   while (1)
   {
-	int playlen, skip;
+    int playlen, skip;
 
-	es_log(2, "synthesize: Beginning of main loop.");
-	TEXT_LOCK_NI;
-	/* The idea here is to wait until new text data has
-	 * arrived and until there is less than MAX_WAVVE_BUFFER_TIME
-	 * of wave data in the wave buffer. Only consider time_left
-	 * if wave queue contains at least five junks of data.
-	*/
-	ES_LOG_STATE("checking condition");
-	while (!text[text_head] || (time_left > MAX_WAVE_BUFFER_TIME && ac_tail - ac_head > 5))
-	{
-	  text_thread_testcancel();
-	  es_log(2, "synthesize: waiting for new text data. Going to sleep.");
-	  pthread_cond_wait(&text_condition, &text_mutex);
-	ES_LOG_STATE("Woke up, checking condition");
-	}
-	ES_LOG_STATE("Condition passed");
-	text_thread_testcancel();
-	/* Copy command into temporary buffer
-	 * so we can release the text mutex whilel
-	 * synthesizing the speech */
-	size_t command_length = strlen(text + text_head);
-	assert(command_length < text_tail - text_head);
-	char buf[command_length + 1];
-	strcpy(buf, text + text_head);
+    es_log(2, "synthesize: Beginning of main loop.");
+    TEXT_LOCK_NI;
+    /* The idea here is to wait until new text data has
+     * arrived and until there is less than MAX_WAVVE_BUFFER_TIME
+     * of wave data in the wave buffer. Only consider time_left
+     * if wave queue contains at least five junks of data.
+    */
+    ES_LOG_STATE("checking condition");
+    while (!text[text_head] || (time_left > MAX_WAVE_BUFFER_TIME && ac_tail - ac_head > 5))
+    {
+      text_thread_testcancel();
+      es_log(2, "synthesize: waiting for new text data. Going to sleep.");
+      pthread_cond_wait(&text_condition, &text_mutex);
+    ES_LOG_STATE("Woke up, checking condition");
+    }
+    ES_LOG_STATE("Condition passed");
+    text_thread_testcancel();
+    /* Copy command into temporary buffer
+     * so we can release the text mutex whilel
+     * synthesizing the speech */
+    size_t command_length = strlen(text + text_head);
+    assert(command_length < text_tail - text_head);
+    char buf[command_length + 1];
+    strcpy(buf, text + text_head);
 
-	TEXT_UNLOCK_NI;
+    TEXT_UNLOCK_NI;
 
-	switch ((command = buf[0]))
-	{
-	case 1:	/* text */
-	  wptr = flite_text_to_wave(buf + 1, v);
-	  break;
-	case 2:	/* tone */
-	  {
-		int freq, dur, vol;
-		if (sscanf(buf + 1, "%d %d %d", &freq, &dur, &vol) != 3)
-		{
-		  es_log(1, "unable to scan tone: %s", text + text_head);
-		  break;
-		}
-		wptr = generate_tone(freq, dur, vol);
-		break;
-	  }
-	default:
-	  /* snafu - I'm getting the hell out of here */
-	  es_log(1, "synthesize: internal error: unknown command: %x", command);
-	  return NULL;
-	}
-	
-	determine_playlen(sparam[S_SPEED], wptr, command, &playlen, &skip);
+    switch ((command = buf[0]))
+    {
+    case 1: /* text */
+      wptr = flite_text_to_wave(buf + 1, v);
+      break;
+    case 2: /* tone */
+      {
+        int freq, dur, vol;
+        if (sscanf(buf + 1, "%d %d %d", &freq, &dur, &vol) != 3)
+        {
+          es_log(1, "unable to scan tone: %s", text + text_head);
+          break;
+        }
+        wptr = generate_tone(freq, dur, vol);
+        break;
+      }
+    default:
+      /* snafu - I'm getting the hell out of here */
+      es_log(1, "synthesize: internal error: unknown command: %x", command);
+      return NULL;
+    }
+    
+    determine_playlen(sparam[S_SPEED], wptr, command, &playlen, &skip);
 
-	WAVE_LOCK_NI;
-	/* Make sure there is space in wave buffer */
-	if (ac_size == ac_tail + 1)
-	{
-	  ac_size <<= 1;
-	  ac = (AUDIO_COMMAND *)realloc(ac, ac_size * sizeof(AUDIO_COMMAND));
-	  if (!ac)
-	  {
-		fprintf(stderr, "Out of memory, ac_size=%d\n", ac_size);
-		exit(1);
-	  }
-	}
+    WAVE_LOCK_NI;
+    /* Make sure there is space in wave buffer */
+    if (ac_size == ac_tail + 1)
+    {
+      ac_size <<= 1;
+      ac = (AUDIO_COMMAND *)realloc(ac, ac_size * sizeof(AUDIO_COMMAND));
+      if (!ac)
+      {
+        fprintf(stderr, "Out of memory, ac_size=%d\n", ac_size);
+        exit(1);
+      }
+    }
 
-	/* Add newly created waveform to buffer */
-	ac[ac_tail].type = command;
-	ac[ac_tail++].data = wptr;
-	TEXT_LOCK_NI;
-	time_left +=((float) playlen) / wptr->sample_rate;
-	if (text_head < text_synthpos)
-	{
-	  ac_synthpos = ac_tail;
-	  es_log(2, "synthesize: Waking up wave thread.");
-	  pthread_cond_signal(&wave_condition);
-	}
-	WAVE_UNLOCK_NI;
+    /* Add newly created waveform to buffer */
+    ac[ac_tail].type = command;
+    ac[ac_tail++].data = wptr;
+    TEXT_LOCK_NI;
+    time_left +=((float) playlen) / wptr->sample_rate;
+    if (text_head < text_synthpos)
+    {
+      ac_synthpos = ac_tail;
+      es_log(2, "synthesize: Waking up wave thread.");
+      pthread_cond_signal(&wave_condition);
+    }
+    WAVE_UNLOCK_NI;
 
-	/* Text buffer maintenance */
+    /* Text buffer maintenance */
 /* Skip text just synthesized */
-	text_head += command_length + 1;
-	
-	/* Compact text buffer if it seems the right thing to do */
-	if (text_head == text_tail)
-	{
-	  reset_text_buffer();
-	}
-	else if (text_head > (text_size >> 1))
-	{
-	  //es_log(1, "synthesizer: compacting buffer");
-	  memcpy(text, text + text_head, text_tail - text_head + 1);
-	  text_tail -= text_head;
-	  if (text_synthpos > 0) text_synthpos -= text_head;
-	  text_head = 0;
-	}
-	TEXT_UNLOCK_NI;
-	ES_LOG_STATE("After adding");
+    text_head += command_length + 1;
+    
+    /* Compact text buffer if it seems the right thing to do */
+    if (text_head == text_tail)
+    {
+      reset_text_buffer();
+    }
+    else if (text_head > (text_size >> 1))
+    {
+      //es_log(1, "synthesizer: compacting buffer");
+      memcpy(text, text + text_head, text_tail - text_head + 1);
+      text_tail -= text_head;
+      if (text_synthpos > 0) text_synthpos -= text_head;
+      text_head = 0;
+    }
+    TEXT_UNLOCK_NI;
+    ES_LOG_STATE("After adding");
   }
   /* We  should never get here...*/
   assert(0);
@@ -797,13 +797,13 @@ static void add_command(struct synth_struct *s, int id, unsigned char *buffer)
   len = strlen((char *)buffer);
   if (text_thread_active)
   {
-	TEXT_LOCK_NI;
+    TEXT_LOCK_NI;
   }
 
   if (text_tail + len + 3 >= text_size)
   {
     text_size <<= 1;
-	text_size += len;
+    text_size += len;
     text = (char *)realloc(text, text_size);
     if (!text)
     {
@@ -825,10 +825,10 @@ static void add_command(struct synth_struct *s, int id, unsigned char *buffer)
   }
   else
   {
-	/* Signal to text thread that more data is available */
-	ES_LOG_STATE("waking up text thread.");
-	pthread_cond_signal(&text_condition);
-	TEXT_UNLOCK_NI;
+    /* Signal to text thread that more data is available */
+    ES_LOG_STATE("waking up text thread.");
+    pthread_cond_signal(&text_condition);
+    TEXT_UNLOCK_NI;
   }
   return;
 }
@@ -864,22 +864,22 @@ static int s_flush(synth_t *s)
 
   if (!wave_thread_active)
   {
-	es_log(2, "es_flush: creating play thread");
-	WAVE_LOCK_NI;
-	wave_thread_active = 1;
-	ac_synthpos = ac_tail;
-	pthread_create(&wave_thread, &ta, play, s);
-	WAVE_UNLOCK_NI;
+    es_log(2, "es_flush: creating play thread");
+    WAVE_LOCK_NI;
+    wave_thread_active = 1;
+    ac_synthpos = ac_tail;
+    pthread_create(&wave_thread, &ta, play, s);
+    WAVE_UNLOCK_NI;
   }
   else
   {
-	WAVE_LOCK_NI;
-	if (ac_synthpos < ac_tail)
-	{
-	  ac_synthpos = ac_tail;
-	  pthread_cond_signal(&wave_condition);
-	}
-	WAVE_UNLOCK_NI;
+    WAVE_LOCK_NI;
+    if (ac_synthpos < ac_tail)
+    {
+      ac_synthpos = ac_tail;
+      pthread_cond_signal(&wave_condition);
+    }
+    WAVE_UNLOCK_NI;
   }
   return 0;
 }
@@ -900,37 +900,37 @@ static int s_clear(synth_t *s)
   {
     wave_thread_cancel = 1;
 #ifdef DO_WAVE_CANCEL
--	pthread_cancel(wave_thread);
+-   pthread_cancel(wave_thread);
 #endif
-	pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting
+    pthread_cond_signal(&wave_condition); // necessary because we inhibit cancellation while waiting
   }
 
   if (text_thread_active)
   {
-	TEXT_LOCK_NI;
-	text_thread_cancel = 1;
-	pthread_cond_signal(&text_condition);
-	TEXT_UNLOCK_NI;
+    TEXT_LOCK_NI;
+    text_thread_cancel = 1;
+    pthread_cond_signal(&text_condition);
+    TEXT_UNLOCK_NI;
   }
 
   if (text_thread_active)
   {
-	ret = pthread_join(text_thread, NULL);
-	assert(ret == 0);
+    ret = pthread_join(text_thread, NULL);
+    assert(ret == 0);
   }
   if (wave_thread_active)
   {
-	ret =pthread_join(wave_thread, NULL);
-	assert(ret == 0);
+    ret =pthread_join(wave_thread, NULL);
+    assert(ret == 0);
   }
-	
+    
   /* At this point, no thread is running */
 
   /* Free any wave data */
   es_log(2, "s_clear: freeing wave data: %d", ac_tail);
   for (i = 0; i < ac_tail; i++)
   {
-	if (ac[i].type != NONE) ac_destroy(&ac[i]);
+    if (ac[i].type != NONE) ac_destroy(&ac[i]);
   }
 
   /* Reset data structures */
@@ -946,9 +946,9 @@ static int s_clear(synth_t *s)
   ret = pthread_cond_destroy(&wave_condition);
   if (ret)
   {
-	es_log(2, "s_clear: Wave Condition error %s", strerror(ret));
-	fprintf(stderr, "s_clear: Wave condition corrupted and not recoverable.");
-	exit(4);
+    es_log(2, "s_clear: Wave Condition error %s", strerror(ret));
+    fprintf(stderr, "s_clear: Wave condition corrupted and not recoverable.");
+    exit(4);
   }
   pthread_cond_init(&wave_condition, NULL);
 
@@ -956,100 +956,100 @@ static int s_clear(synth_t *s)
 }
 
 
-							 #if 0
-								/*
-							 * ----------------------------------------------------------------------
-							 * ToDo
-							 * ----------------------------------------------------------------------
-							 */
+                             #if 0
+                                /*
+                             * ----------------------------------------------------------------------
+                             * ToDo
+                             * ----------------------------------------------------------------------
+                             */
   static int s_index_set(struct synth_struct *s)
-							 {
-							  return 0;
-							  }
+                             {
+                              return 0;
+                              }
 
-								/*
-							 * ----------------------------------------------------------------------
-							 * ToDo
-							 * ----------------------------------------------------------------------
-							 */
-							 static int s_index_wait(struct synth_struct *s, int id, int timeout)
-							 {
-							  int res = 0;
-							  return res;
-							  }
-							 #endif
-
-
-								/*
-							 * ----------------------------------------------------------------------
-							 * Get a synthesizer parameter.
-							 * ----------------------------------------------------------------------
-							 */
-							 static int s_get_param(struct synth_struct *s, synth_par_t par, int *value)
-							 {
-							  if (par >= 0 && par < S_MAX) {
-															*value = s->state->param[par];
-															return 0;
-															} else
-							  return 1;
-							  }
+                                /*
+                             * ----------------------------------------------------------------------
+                             * ToDo
+                             * ----------------------------------------------------------------------
+                             */
+                             static int s_index_wait(struct synth_struct *s, int id, int timeout)
+                             {
+                              int res = 0;
+                              return res;
+                              }
+                             #endif
 
 
-								/*
-							 * ----------------------------------------------------------------------
-							 * Set a parameter of the synthesizer.
-							 * ----------------------------------------------------------------------
-							 */
-							 static int s_set_param(struct synth_struct *s, synth_par_t par, int value)
-							 {
-							  verify_language(s);
+                                /*
+                             * ----------------------------------------------------------------------
+                             * Get a synthesizer parameter.
+                             * ----------------------------------------------------------------------
+                             */
+                             static int s_get_param(struct synth_struct *s, synth_par_t par, int *value)
+                             {
+                              if (par >= 0 && par < S_MAX) {
+                                                            *value = s->state->param[par];
+                                                            return 0;
+                                                            } else
+                              return 1;
+                              }
 
-							  switch (par) {
-											case S_SPEED:               /* default: 1 */
-											es_log(2, "Setting duration_stretch to %4.3f", (float)1000 / value);
-											feat_set_float(v->features, "duration_stretch", (float)1000 / value);
-											break;
-											case S_PITCH:               /* default: 100 */
-											es_log(2, "Setting pitch to %3.3f", exp((float)value / 1000) * 100 / exp(1));
-											feat_set_float(v->features, "int_f0_target_mean", exp((float)value / 1000) * 100 / exp(1));
-											/* tbd */
-											break;
-											case S_VOLUME:              /* default: 92, range: 0-100 */
-											/* tbd */
-											break;
-											default:
-											return 1;
-											}
-							  s->state->param[par] = value;
 
-							  return 0;
-							  }
+                                /*
+                             * ----------------------------------------------------------------------
+                             * Set a parameter of the synthesizer.
+                             * ----------------------------------------------------------------------
+                             */
+                             static int s_set_param(struct synth_struct *s, synth_par_t par, int value)
+                             {
+                              verify_language(s);
 
-							 #ifdef STANDALONE
-							 lang_descr_t languages[LANGUAGES] = {
-																  { LANG_BRITISH_ENGLISH, "British English" },
-																  { LANG_GERMAN, "German" },
-																  { LANG_DUMMY, "no language" }
-																  };
+                              switch (par) {
+                                            case S_SPEED:               /* default: 1 */
+                                            es_log(2, "Setting duration_stretch to %4.3f", (float)1000 / value);
+                                            feat_set_float(v->features, "duration_stretch", (float)1000 / value);
+                                            break;
+                                            case S_PITCH:               /* default: 100 */
+                                            es_log(2, "Setting pitch to %3.3f", exp((float)value / 1000) * 100 / exp(1));
+                                            feat_set_float(v->features, "int_f0_target_mean", exp((float)value / 1000) * 100 / exp(1));
+                                            /* tbd */
+                                            break;
+                                            case S_VOLUME:              /* default: 92, range: 0-100 */
+                                            /* tbd */
+                                            break;
+                                            default:
+                                            return 1;
+                                            }
+                              s->state->param[par] = value;
 
-							 lang_t lang =
-							 {
-							  NULL,
-							  &languages[0],
-							  NULL,
-							  NULL,
-							  0,
-							  0,
-							  NULL,
-							  NULL,
-							  NULL,
-							  NULL,
-							  NULL
-							  };
+                              return 0;
+                              }
 
-							 lang_t *language_open(void *context, lookup_string_t lookup)
-							 {
-							  lang.synth = synth_open(context, lookup);
-							  return &lang;
-							  }
-							 #endif
+                             #ifdef STANDALONE
+                             lang_descr_t languages[LANGUAGES] = {
+                                                                  { LANG_BRITISH_ENGLISH, "British English" },
+                                                                  { LANG_GERMAN, "German" },
+                                                                  { LANG_DUMMY, "no language" }
+                                                                  };
+
+                             lang_t lang =
+                             {
+                              NULL,
+                              &languages[0],
+                              NULL,
+                              NULL,
+                              0,
+                              0,
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL
+                              };
+
+                             lang_t *language_open(void *context, lookup_string_t lookup)
+                             {
+                              lang.synth = synth_open(context, lookup);
+                              return &lang;
+                              }
+                             #endif
