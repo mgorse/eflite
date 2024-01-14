@@ -571,9 +571,11 @@ static void * play(void *s)
     type = ac[ac_head].type;
     WAVE_UNLOCK;
     
-    es_log(2, "Opening audio device.");
     if (!audiodev)
+    {
+      es_log(2, "Opening audio device.");
       audiodev = audio_open(wptr->sample_rate, wptr->num_channels, CST_AUDIO_LINEAR16);
+    }
     if (audiodev == NULL)
     {
       es_log(2, "Failed to open audio device.");
@@ -631,12 +633,12 @@ es_log(2, "Cannot recover, exiting...");
     TEXT_UNLOCK;
 
     WAVE_LOCK;
-    es_log(2, "play: Closing audio device");
-    close_audiodev();
     ac_destroy(&ac[ac_head]);
     ac_head++;
     if (ac_head == ac_tail)
     {
+      es_log(2, "play: Closing audio device");
+      close_audiodev();
       reset_wave_buffer();
     }
     else if (ac_head > (ac_size >> 1))
