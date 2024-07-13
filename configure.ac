@@ -1,6 +1,7 @@
 dnl Much of this code stolen from Festival Lite's configure.in
 
-AC_INIT(es.h)
+AC_INIT
+AC_CONFIG_SRCDIR([es.h])
 
 AC_PROG_CC
 
@@ -89,4 +90,5 @@ fi
 AC_SUBST(FL_LEX)
 AC_SUBST(LIBS)
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
