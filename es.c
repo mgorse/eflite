@@ -182,7 +182,7 @@ char *ascii[256] = {
   "ascii 157",
   "ascii 158",
   "ascii 159",
-  "ascii 160",
+  "hard space",
   "ascii 161",
   "ascii 162",
   "ascii 163",
