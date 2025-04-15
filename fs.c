@@ -530,7 +530,6 @@ static void
 wave_canceled (void *arg)
 {
   audio_drain (audiodev);
-  close_audiodev ();
 }
 
 static void * play(void *s)
@@ -610,7 +609,6 @@ es_log(2, "Cannot recover, exiting...");
         if (wave_thread_cancel)
         {
       audio_drain (audiodev);
-          close_audiodev ();
           return NULL;
         }
       }
@@ -638,7 +636,6 @@ es_log(2, "Cannot recover, exiting...");
     if (ac_head == ac_tail)
     {
       es_log(2, "play: Closing audio device");
-      close_audiodev();
       reset_wave_buffer();
     }
     else if (ac_head > (ac_size >> 1))
